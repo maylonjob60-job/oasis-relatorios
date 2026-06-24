@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inserir Dados — Oásis</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black:    #0a0a0a;
+      --yellow:   #F5C400;
+      --gold-dk:  #C9A217;
+      --offwhite: #1c1c1c;
+      --white:    #141414;
+      --border:   rgba(255,255,255,0.07);
+      --muted:    #888;
+      --text:     #e0e0dc;
+      --success:  #4caf7d;
+      --danger:   #e05252;
+      --radius:   14px;
+      --shadow:   0 8px 40px rgba(0,0,0,0.55);
+      --tr:       .16s ease;
+    }
+
+    body {
+      font-family: 'Segoe UI', Inter, system-ui, sans-serif;
+      background: #0a0a0a;
+      color: #e0e0dc;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    .header {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--black);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 40px; height: 68px;
+      border-bottom: 3px solid var(--yellow);
+    }
+    .brand { display: flex; align-items: center; gap: 14px; text-decoration: none; }
+    .brand-icon {
+      width: 40px; height: 40px; background: var(--yellow);
+      border-radius: 10px; display: flex; align-items: center;
+      justify-content: center; font-size: 20px; font-weight: 900; color: var(--black);
+    }
+    .brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .brand-name { font-size: 18px; font-weight: 800; color: var(--yellow); }
+    .brand-sub  { font-size: 11px; color: rgba(255,255,255,.5); }
+    .nav { display: flex; gap: 4px; }
+    .nav-link {
+      color: rgba(255,255,255,.65); font-size: 13.5px; font-weight: 500;
+      padding: 8px 18px; border-radius: 8px; text-decoration: none;
+      transition: background var(--tr), color var(--tr); cursor: pointer;
+    }
+    .nav-link:hover  { color: #fff; background: rgba(255,255,255,.08); }
+    .nav-link.active { color: var(--black); background: var(--yellow); font-weight: 700; }
+
+    /* ── Layout ── */
+    .container { max-width: 960px; margin: 0 auto; padding: 32px 24px 80px; }
+
+    .page-header {
+      display: flex; align-items: center; gap: 16px; margin-bottom: 24px;
+    }
+    .back-link {
+      color: var(--muted); font-size: 13px; font-weight: 600;
+      text-decoration: none; padding: 7px 14px;
+      border: 1.5px solid var(--border); border-radius: 8px;
+      background: var(--white); transition: border-color var(--tr), color var(--tr);
+    }
+    .back-link:hover { border-color: var(--black); color: var(--black); }
+    .page-title { font-size: 22px; font-weight: 800; }
+    .page-sub   { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+    /* ── Período card ── */
+    .periodo-card {
+      background: var(--black); color: #fff;
+      border-radius: var(--radius); padding: 20px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 16px;
+      margin-bottom: 4px;
+    }
+    .periodo-label {
+      font-size: 11px; font-weight: 700; color: var(--yellow);
+      text-transform: uppercase; letter-spacing: .6px; margin-bottom: 10px;
+    }
+    .periodo-fields { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+    .periodo-field  { display: flex; flex-direction: column; gap: 5px; }
+    .periodo-field label { font-size: 11px; color: rgba(255,255,255,.6); font-weight: 600; }
+    .periodo-field input,
+    .periodo-field select {
+      background: rgba(255,255,255,.1); border: 1.5px solid rgba(255,255,255,.2);
+      border-radius: 8px; padding: 9px 12px;
+      font-size: 14px; font-family: inherit; color: #fff; outline: none;
+      width: 110px; transition: border-color var(--tr);
+      -moz-appearance: textfield;
+    }
+    .periodo-field input::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .periodo-field input:focus,
+    .periodo-field select:focus { border-color: var(--yellow); }
+    .periodo-field select option { background: var(--black); color: #fff; }
+
+    /* Status strip */
+    .status-strip {
+      display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+    }
+    .status-item {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 12px; font-weight: 500;
+    }
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
+    }
+    .status-badge.unsaved { background: rgba(255,255,255,.1); color: rgba(255,255,255,.5); }
+    .status-badge.saved   { background: rgba(30,180,80,.2);   color: #4edd8a; }
+    .status-divider { color: rgba(255,255,255,.25); font-size: 18px; }
+
+    /* ── Tabs ── */
+    .tabs-row {
+      display: flex; gap: 0;
+      border-bottom: 2px solid var(--border);
+      background: var(--white);
+      border-radius: 0 0 0 0;
+      margin-bottom: 0;
+    }
+    .tab-btn {
+      background: none; border: none; cursor: pointer;
+      font-size: 14px; font-weight: 600; color: var(--muted);
+      padding: 14px 28px; position: relative;
+      border-radius: 0; transition: color var(--tr);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .tab-btn:hover  { color: var(--black); }
+    .tab-btn.active { color: var(--black); }
+    .tab-btn.active::after {
+      content: ''; position: absolute; bottom: -2px; left: 0; right: 0; height: 2px;
+      background: var(--yellow);
+    }
+    .tab-btn .tab-saved {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #ccc; flex-shrink: 0; transition: background var(--tr);
+    }
+    .tab-btn .tab-saved.ok { background: #1a7a40; }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Form card ── */
+    .form-card {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 0 0 var(--radius) var(--radius);
+      padding: 28px 32px 32px;
+      box-shadow: var(--shadow);
+    }
+
+    .form-section { margin-bottom: 24px; }
+    .form-section-title {
+      font-size: 11px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .6px;
+      display: flex; align-items: center; gap: 8px;
+      padding-bottom: 10px; margin-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-dot {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+      background: var(--yellow);
+    }
+
+    .form-grid {
+      display: grid; gap: 14px;
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .form-grid.g2 { grid-template-columns: repeat(2, 1fr); }
+    .form-grid.g4 { grid-template-columns: repeat(4, 1fr); }
+
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field label {
+      font-size: 12px; font-weight: 600; color: var(--black);
+      display: flex; align-items: center; gap: 5px;
+    }
+    .field input, .field select {
+      background: var(--white); border: 1.5px solid var(--border);
+      border-radius: 8px; padding: 10px 13px;
+      font-size: 14px; font-family: inherit; color: var(--black);
+      transition: border-color var(--tr); outline: none;
+      -moz-appearance: textfield;
+    }
+    .field input::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .field input:focus  { border-color: var(--yellow); }
+    .field select { cursor: pointer; }
+    .field input[readonly] {
+      background: var(--offwhite); color: var(--muted);
+      cursor: not-allowed; border-style: dashed;
+    }
+    .field .hint { font-size: 11px; color: var(--muted); line-height: 1.3; }
+
+    .auto-badge {
+      background: var(--yellow); color: var(--black);
+      font-size: 9px; font-weight: 800; padding: 1px 5px;
+      border-radius: 4px; letter-spacing: .3px;
+    }
+    .calc-badge {
+      background: var(--black); color: #fff;
+      font-size: 9px; font-weight: 800; padding: 1px 5px;
+      border-radius: 4px;
+    }
+
+    /* Treinadores grid */
+    .treinadores-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+    }
+    .treinador-field {
+      background: var(--offwhite); border-radius: 10px;
+      padding: 12px 14px; display: flex; flex-direction: column; gap: 6px;
+      border: 1.5px solid transparent; transition: border-color var(--tr);
+    }
+    .treinador-field:focus-within { border-color: var(--yellow); }
+    .treinador-field label {
+      font-size: 11px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .4px;
+    }
+    .treinador-field input {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 7px; padding: 8px 10px; font-size: 20px; font-weight: 800;
+      font-family: inherit; color: var(--black); width: 100%; outline: none;
+      text-align: center; transition: border-color var(--tr);
+      -moz-appearance: textfield;
+    }
+    .treinador-field input::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .treinador-field input:focus { border-color: var(--yellow); }
+
+    .total-encarteirados-display {
+      background: var(--black); color: var(--yellow);
+      border-radius: 10px; padding: 14px 18px;
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: 14px;
+    }
+    .total-encarteirados-display .lbl { font-size: 12px; font-weight: 700; color: rgba(255,255,255,.7); }
+    .total-encarteirados-display .val { font-size: 28px; font-weight: 900; }
+
+    /* Conversão display */
+    .conversao-display {
+      background: var(--offwhite); border-radius: 10px; padding: 14px 18px;
+      display: flex; align-items: center; justify-content: space-between;
+      border: 1.5px dashed var(--border);
+    }
+    .conversao-display .lbl { font-size: 12px; font-weight: 700; color: var(--muted); }
+    .conversao-display .val {
+      font-size: 30px; font-weight: 900; color: var(--black);
+      display: flex; align-items: baseline; gap: 3px;
+    }
+    .conversao-display .val span { font-size: 14px; font-weight: 700; color: var(--muted); }
+
+    /* ── Action bar ── */
+    .action-bar {
+      display: flex; align-items: center; justify-content: flex-end;
+      gap: 10px; margin-top: 32px; padding-top: 24px;
+      border-top: 1px solid var(--border);
+    }
+    .btn {
+      padding: 11px 22px; border-radius: 9px; border: none;
+      font-size: 14px; font-weight: 700; cursor: pointer;
+      transition: background var(--tr), transform .1s; font-family: inherit;
+    }
+    .btn:active { transform: scale(.98); }
+    .btn-ghost {
+      background: none; color: var(--muted);
+      border: 1.5px solid var(--border);
+    }
+    .btn-ghost:hover  { border-color: var(--black); color: var(--black); }
+    .btn-save  { background: var(--black); color: #fff; }
+    .btn-save:hover  { background: #333; }
+    .btn-save.saved  { background: var(--success); }
+
+    /* PDF button + dropdown */
+    .pdf-wrap { position: relative; }
+    .btn-pdf  {
+      background: var(--yellow); color: var(--black);
+      font-size: 14px; font-weight: 800;
+      padding: 11px 22px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .btn-pdf:hover { background: #d9ac00; }
+    .pdf-caret { font-size: 10px; }
+    .pdf-dropdown {
+      display: none; position: absolute; bottom: calc(100% + 8px); right: 0;
+      background: var(--black); border-radius: 12px; padding: 6px;
+      min-width: 230px;
+      box-shadow: 0 12px 40px rgba(0,0,0,.3);
+      z-index: 200;
+    }
+    .pdf-dropdown.open { display: block; }
+    .pdf-dropdown button {
+      display: block; width: 100%; background: none; border: none;
+      cursor: pointer; color: rgba(255,255,255,.85); text-align: left;
+      padding: 11px 16px; border-radius: 8px;
+      font-size: 14px; font-weight: 600; font-family: inherit;
+      transition: background var(--tr), color var(--tr);
+    }
+    .pdf-dropdown button:hover { background: rgba(245,196,0,.15); color: var(--yellow); }
+    .pdf-dropdown .pdf-sep {
+      border: none; border-top: 1px solid rgba(255,255,255,.1);
+      margin: 4px 10px;
+    }
+
+    /* ── Leads Mês info ── */
+    .leads-mes-info {
+      background: rgba(245,196,0,.12); border: 1px solid rgba(245,196,0,.3);
+      border-radius: 8px; padding: 10px 14px; margin-top: 6px;
+      font-size: 12px; color: #7a6200;
+      display: none;
+    }
+    .leads-mes-info.show { display: block; }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed; bottom: 28px; right: 28px;
+      padding: 14px 22px; border-radius: 10px;
+      font-size: 14px; font-weight: 600;
+      box-shadow: 0 8px 32px rgba(0,0,0,.18);
+      opacity: 0; transform: translateY(10px);
+      transition: opacity .25s, transform .25s;
+      pointer-events: none; z-index: 999; max-width: 340px;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+    #toast.ok  { background: var(--black); color: var(--yellow); }
+    #toast.err { background: var(--danger); color: #fff; }
+
+    @media (max-width: 800px) {
+      .header { padding: 0 16px; }
+      .container { padding: 20px 14px 60px; }
+      .form-card { padding: 18px 16px 24px; }
+      .form-grid     { grid-template-columns: repeat(2, 1fr); }
+      .form-grid.g4  { grid-template-columns: repeat(2, 1fr); }
+      .treinadores-grid { grid-template-columns: repeat(2, 1fr); }
+      .periodo-card { flex-direction: column; align-items: flex-start; }
+      .status-strip { flex-wrap: wrap; }
+      .brand-sub { display: none; }
+      .brand-logo { height: 36px; }
+    }
+
+    /* ── Header premium ────────────────────────────────── */
+    .header {
+      background: rgba(8,8,8,0.94);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-bottom: 1px solid rgba(245,196,0,0.2);
+      box-shadow: 0 1px 0 rgba(245,196,0,0.12), 0 4px 24px rgba(0,0,0,0.6);
+      height: 108px;
+    }
+    .brand-logo { height: 92px; width: auto; object-fit: contain; display: block; }
+    .brand-fallback { display: flex; align-items: center; gap: 12px; }
+    .brand-icon {
+      background: linear-gradient(135deg, var(--yellow), var(--gold-dk));
+      border-radius: 12px; box-shadow: 0 4px 16px rgba(245,196,0,0.35);
+    }
+    .nav-link.active { box-shadow: 0 4px 14px rgba(245,196,0,0.3); }
+    .nav-link { border: 1px solid transparent; }
+    .nav-link:hover { border-color: rgba(255,255,255,0.07); }
+
+    /* ── Dark text fixes ───────────────────────────────── */
+    .page-title { color: #e0e0dc; }
+    .page-sub   { color: #888; }
+    .back-link  { background: #1c1c1c; color: #888; border-color: rgba(255,255,255,0.07); }
+    .back-link:hover { border-color: rgba(245,196,0,0.4); color: #e0e0dc; }
+    .field label { color: #888; }
+    .field input, .field select { color: #e0e0dc; }
+    .field input[readonly] { color: #555; border-style: dashed; }
+    .field select option { background: #1c1c1c; color: #e0e0dc; }
+    .treinador-field input { color: #e0e0dc; }
+    .tab-btn:hover { color: #e0e0dc; }
+    .tab-btn.active { color: var(--yellow); }
+    .btn-ghost:hover { border-color: rgba(255,255,255,.2); color: #e0e0dc; }
+    .btn-save { background: linear-gradient(135deg, var(--yellow), var(--gold-dk)); color: #1a1a1a; box-shadow: 0 4px 16px rgba(245,196,0,0.3); }
+    .btn-save:hover { box-shadow: 0 6px 24px rgba(245,196,0,0.45); }
+    .btn-save.saved { background: var(--success); color: #fff; box-shadow: none; }
+    .conversao-display .val { color: #e0e0dc; }
+    .leads-mes-info { color: #C9A217; background: rgba(245,196,0,0.08); border-color: rgba(245,196,0,0.2); }
+    #toast { backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,.08); }
+    #toast.ok { background: rgba(20,20,20,.95); }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <a class="brand" href="/">
+    <img src="/assets/logo.png" class="brand-logo" alt="Oásis Centro de Treinamento"
+         onerror="this.style.display='none';document.getElementById('bfb').style.display='flex'">
+    <div id="bfb" class="brand-fallback" style="display:none">
+      <div class="brand-icon" style="width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;color:#1a1a1a;flex-shrink:0">O</div>
+      <div class="brand-text">
+        <span class="brand-name">OÁSIS</span>
+        <span class="brand-sub">Centro de Treinamento</span>
+      </div>
+    </div>
+  </a>
+  <nav class="nav">
+    <a class="nav-link" href="/">Dashboard</a>
+    <span class="nav-link active">Inserir Dados</span>
+    <a class="nav-link" href="/historico.html">Histórico</a>
+    <a class="nav-link" href="/comparar.html">Comparar Períodos</a>
+  </nav>
+</header>
+
+<!-- CONTEÚDO -->
+<div class="container">
+
+  <!-- Título -->
+  <div class="page-header">
+    <a class="back-link" href="/">← Dashboard</a>
+    <div>
+      <div class="page-title">Inserir Dados Semanais</div>
+      <div class="page-sub">Preencha os indicadores da equipe comercial e técnica</div>
+    </div>
+  </div>
+
+  <!-- Período compartilhado + status -->
+  <div class="periodo-card">
+    <div>
+      <div class="periodo-label">Período de referência</div>
+      <div class="periodo-fields">
+        <div class="periodo-field">
+          <label>Semana</label>
+          <input id="periodo-semana" type="number" min="1" max="53" placeholder="Ex: 25" />
+        </div>
+        <div class="periodo-field">
+          <label>Mês</label>
+          <select id="periodo-mes">
+            <option value="">—</option>
+            <option value="1">Janeiro</option><option value="2">Fevereiro</option>
+            <option value="3">Março</option><option value="4">Abril</option>
+            <option value="5">Maio</option><option value="6">Junho</option>
+            <option value="7">Julho</option><option value="8">Agosto</option>
+            <option value="9">Setembro</option><option value="10">Outubro</option>
+            <option value="11">Novembro</option><option value="12">Dezembro</option>
+          </select>
+        </div>
+        <div class="periodo-field">
+          <label>Ano</label>
+          <input id="periodo-ano" type="number" min="2020" max="2099" placeholder="2026" />
+        </div>
+      </div>
+    </div>
+    <div class="status-strip">
+      <div class="status-item">
+        <span>📊 Comercial</span>
+        <span class="status-badge unsaved" id="status-c">○ Não salvo</span>
+      </div>
+      <div class="status-divider">·</div>
+      <div class="status-item">
+        <span>🏋️ Técnico</span>
+        <span class="status-badge unsaved" id="status-t">○ Não salvo</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs-row">
+    <button class="tab-btn active" data-tab="comercial">
+      <span class="tab-saved" id="dot-c"></span>
+      Equipe Comercial
+    </button>
+    <button class="tab-btn" data-tab="tecnico">
+      <span class="tab-saved" id="dot-t"></span>
+      Equipe Técnica
+    </button>
+  </div>
+
+  <!-- ═══ TAB COMERCIAL ═════════════════════════════════════════ -->
+  <div class="tab-panel active" id="tab-comercial">
+    <div class="form-card">
+
+      <!-- Captação de Leads -->
+      <div class="form-section">
+        <div class="form-section-title">
+          <span class="section-dot"></span> Captação de Leads
+        </div>
+        <div class="form-grid g2">
+          <div class="field">
+            <label>Leads na Semana</label>
+            <input id="c-leads-semana" type="number" min="0" placeholder="0" />
+          </div>
+          <div class="field">
+            <label>
+              Leads no Mês
+              <span class="auto-badge">AUTO</span>
+            </label>
+            <input id="c-leads-mes" type="number" readonly placeholder="—" tabindex="-1" />
+            <span class="hint">Soma automática das semanas do mês já salvas + semana atual</span>
+          </div>
+        </div>
+        <div class="leads-mes-info" id="leads-mes-info"></div>
+      </div>
+
+      <!-- Base de Alunos -->
+      <div class="form-section">
+        <div class="form-section-title">
+          <span class="section-dot"></span> Base de Alunos
+        </div>
+        <div class="form-grid g4">
+          <div class="field">
+            <label>Alunos Ativos</label>
+            <input id="c-alunos-ativos" type="number" min="0" placeholder="0" />
+          </div>
+          <div class="field">
+            <label>Plano Anual</label>
+            <input id="c-alunos-anual" type="number" min="0" placeholder="0" />
+          </div>
+          <div class="field">
+            <label>Mensal Recorrente</label>
+            <input id="c-alunos-rec" type="number" min="0" placeholder="0" />
+          </div>
+          <div class="field">
+            <label>Mensal Comum</label>
+            <input id="c-alunos-com" type="number" min="0" placeholder="0" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Movimentação -->
+      <div class="form-section">
+        <div class="form-section-title">
+          <span class="section-dot"></span> Movimentação do Mês
+        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Natação</label>
+            <input id="c-alunos-nat" type="number" min="0" placeholder="0" />
+          </div>
+          <div class="field">
+            <label>Saídas no Mês</label>
+            <input id="c-saidos" type="number" min="0" placeholder="0" />
+          </div>
+          <div class="field">
+            <label>Novos na Semana</label>
+            <input id="c-novos-sem" type="number" min="0" placeholder="0" />
+          </div>
+          <div class="field">
+            <label>Novos no Mês</label>
+            <input id="c-novos-mes" type="number" min="0" placeholder="0" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Ações -->
+      <div class="action-bar">
+        <button class="btn btn-ghost" onclick="limpar('comercial')">Limpar</button>
+        <button class="btn btn-save" id="btn-salvar-c" onclick="salvarComercial()">
+          💾 Salvar Comercial
+        </button>
+        <div class="pdf-wrap">
+          <button class="btn btn-pdf" onclick="togglePdf('c')">
+            ⬇ Finalizar e Gerar PDF <span class="pdf-caret">▾</span>
+          </button>
+          <div class="pdf-dropdown" id="pdf-dropdown-c">
+            <button onclick="gerarPdf('completo')">📋&nbsp; Relatório Completo</button>
+            <hr class="pdf-sep" />
+            <button onclick="gerarPdf('comercial')">📊&nbsp; Apenas Comercial</button>
+            <button onclick="gerarPdf('tecnico')">🏋️&nbsp; Apenas Técnico</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ TAB TÉCNICO ═══════════════════════════════════════════ -->
+  <div class="tab-panel" id="tab-tecnico">
+    <div class="form-card">
+
+      <!-- Treinos -->
+      <div class="form-section">
+        <div class="form-section-title">
+          <span class="section-dot"></span> Treinos & Avaliações
+        </div>
+        <div class="form-grid g4">
+          <div class="field">
+            <label>Revisões de Treinos</label>
+            <input id="t-revisoes" type="number" min="0" placeholder="0" />
+          </div>
+          <div class="field">
+            <label>Novas Avaliações</label>
+            <input id="t-avaliacoes" type="number" min="0" placeholder="0" />
+          </div>
+          <div class="field">
+            <label>Treinos Vencidos</label>
+            <input id="t-vencidos" type="number" min="0" placeholder="0" />
+          </div>
+          <div class="field">
+            <label>Vencendo em 7 dias</label>
+            <input id="t-vencendo" type="number" min="0" placeholder="0" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Experiência -->
+      <div class="form-section">
+        <div class="form-section-title">
+          <span class="section-dot"></span> Experiência & Conversão
+        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Alunos na Experiência</label>
+            <input id="t-alunos-exp" type="number" min="0" placeholder="0"
+                   oninput="calcConversao()" />
+          </div>
+          <div class="field">
+            <label>Fecharam da Experiência</label>
+            <input id="t-fecharam" type="number" min="0" placeholder="0"
+                   oninput="calcConversao()" />
+          </div>
+          <div class="field">
+            <label>Consultoria Física</label>
+            <input id="t-consultoria" type="number" min="0" placeholder="0" />
+          </div>
+        </div>
+
+        <!-- Conversão calculada -->
+        <div style="margin-top:14px">
+          <div class="conversao-display">
+            <div>
+              <div class="lbl">Conversão Experiência <span class="calc-badge" style="font-size:9px">CALCULADO</span></div>
+              <div style="font-size:11px;color:var(--muted);margin-top:3px">
+                (fecharam ÷ experiência) × 100
+              </div>
+            </div>
+            <div class="val" id="conversao-display">
+              <span id="conversao-valor">—</span>
+              <span id="conversao-pct"></span>
+            </div>
+          </div>
+          <input id="t-conversao" type="hidden" value="0" />
+        </div>
+      </div>
+
+      <!-- Encarteirados -->
+      <div class="form-section">
+        <div class="form-section-title">
+          <span class="section-dot"></span> Encarteirados por Treinador
+        </div>
+
+        <div class="treinadores-grid">
+          <div class="treinador-field">
+            <label>Diego</label>
+            <input id="t-enc-diego" type="number" min="0" placeholder="0" oninput="calcTotalEnc()" />
+          </div>
+          <div class="treinador-field">
+            <label>Luiz</label>
+            <input id="t-enc-luiz" type="number" min="0" placeholder="0" oninput="calcTotalEnc()" />
+          </div>
+          <div class="treinador-field">
+            <label>Vinícius</label>
+            <input id="t-enc-vinicius" type="number" min="0" placeholder="0" oninput="calcTotalEnc()" />
+          </div>
+          <div class="treinador-field">
+            <label>Arthur</label>
+            <input id="t-enc-arthur" type="number" min="0" placeholder="0" oninput="calcTotalEnc()" />
+          </div>
+          <div class="treinador-field">
+            <label>Caio</label>
+            <input id="t-enc-caio" type="number" min="0" placeholder="0" oninput="calcTotalEnc()" />
+          </div>
+          <div class="treinador-field">
+            <label>Lucas</label>
+            <input id="t-enc-lucas" type="number" min="0" placeholder="0" oninput="calcTotalEnc()" />
+          </div>
+          <div class="treinador-field">
+            <label>Michele</label>
+            <input id="t-enc-michele" type="number" min="0" placeholder="0" oninput="calcTotalEnc()" />
+          </div>
+        </div>
+
+        <div class="total-encarteirados-display">
+          <div class="lbl">TOTAL ENCARTEIRADOS</div>
+          <div class="val" id="total-enc-display">0</div>
+        </div>
+        <input id="t-total-enc" type="hidden" value="0" />
+      </div>
+
+      <!-- Ações -->
+      <div class="action-bar">
+        <button class="btn btn-ghost" onclick="limpar('tecnico')">Limpar</button>
+        <button class="btn btn-save" id="btn-salvar-t" onclick="salvarTecnico()">
+          💾 Salvar Técnico
+        </button>
+        <div class="pdf-wrap">
+          <button class="btn btn-pdf" onclick="togglePdf('t')">
+            ⬇ Finalizar e Gerar PDF <span class="pdf-caret">▾</span>
+          </button>
+          <div class="pdf-dropdown" id="pdf-dropdown-t">
+            <button onclick="gerarPdf('completo')">📋&nbsp; Relatório Completo</button>
+            <hr class="pdf-sep" />
+            <button onclick="gerarPdf('comercial')">📊&nbsp; Apenas Comercial</button>
+            <button onclick="gerarPdf('tecnico')">🏋️&nbsp; Apenas Técnico</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div><!-- /container -->
+
+<div id="toast"></div>
+
+<script>
+/* ── Estado ──────────────────────────────────────────── */
+let savedCId = null;   // ID do registro comercial salvo
+let savedTId = null;   // ID do registro técnico salvo
+
+/* ── Helpers ──────────────────────────────────────────── */
+const $ = id => document.getElementById(id);
+const intVal = id => parseInt($(id)?.value, 10) || 0;
+
+function getPeriodo() {
+  return {
+    semana: parseInt($('periodo-semana').value, 10) || 0,
+    mes:    parseInt($('periodo-mes').value,    10) || 0,
+    ano:    parseInt($('periodo-ano').value,    10) || 0,
+  };
+}
+
+let toastTimer;
+function toast(msg, tipo = 'ok') {
+  const el = $('toast');
+  el.textContent = msg;
+  el.className = `show ${tipo}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.className = '', 4000);
+}
+
+/* ── Tabs ─────────────────────────────────────────────── */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    $(`tab-${btn.dataset.tab}`).classList.add('active');
+    closePdf();
+  });
+});
+
+/* ── Status badges ────────────────────────────────────── */
+function updateStatus() {
+  const { semana, mes, ano } = getPeriodo();
+  const perStr = semana ? `S${semana}` : '';
+
+  if (savedCId) {
+    $('status-c').className = 'status-badge saved';
+    $('status-c').textContent = `✓ Salvo (ID ${savedCId})`;
+    $('dot-c').classList.add('ok');
+    $('btn-salvar-c').classList.add('saved');
+    $('btn-salvar-c').textContent = '✓ Comercial Salvo';
+  } else {
+    $('status-c').className = 'status-badge unsaved';
+    $('status-c').textContent = '○ Não salvo';
+    $('dot-c').classList.remove('ok');
+    $('btn-salvar-c').classList.remove('saved');
+    $('btn-salvar-c').textContent = '💾 Salvar Comercial';
+  }
+
+  if (savedTId) {
+    $('status-t').className = 'status-badge saved';
+    $('status-t').textContent = `✓ Salvo (ID ${savedTId})`;
+    $('dot-t').classList.add('ok');
+    $('btn-salvar-t').classList.add('saved');
+    $('btn-salvar-t').textContent = '✓ Técnico Salvo';
+  } else {
+    $('status-t').className = 'status-badge unsaved';
+    $('status-t').textContent = '○ Não salvo';
+    $('dot-t').classList.remove('ok');
+    $('btn-salvar-t').classList.remove('saved');
+    $('btn-salvar-t').textContent = '💾 Salvar Técnico';
+  }
+}
+
+/* Resetar IDs quando o período muda */
+function onPeriodoChange() {
+  if (savedCId || savedTId) {
+    savedCId = null;
+    savedTId = null;
+    updateStatus();
+  }
+  calcLeadsMes();
+}
+
+$('periodo-semana').addEventListener('change', onPeriodoChange);
+$('periodo-mes').addEventListener('change',   onPeriodoChange);
+$('periodo-ano').addEventListener('change',   onPeriodoChange);
+
+/* ── Leads Mês (auto-cálculo) ─────────────────────────── */
+let leadsDebounce;
+$('c-leads-semana').addEventListener('input', () => {
+  clearTimeout(leadsDebounce);
+  leadsDebounce = setTimeout(calcLeadsMes, 400);
+});
+
+async function calcLeadsMes() {
+  const { semana, mes, ano } = getPeriodo();
+  const leadsSem = intVal('c-leads-semana');
+
+  if (!mes || !ano) {
+    $('c-leads-mes').value = leadsSem || '';
+    $('leads-mes-info').classList.remove('show');
+    return;
+  }
+
+  try {
+    const res  = await fetch(`/api/historico?mes=${mes}&ano=${ano}`);
+    const data = await res.json();
+
+    // Soma leads de outras semanas do mesmo mês (exclui semana atual p/ não duplicar)
+    const registros = data.comercial.filter(r => !semana || r.semana !== semana);
+    const somaOther = registros.reduce((acc, r) => acc + (r.leads_semana || 0), 0);
+    const total     = somaOther + leadsSem;
+
+    $('c-leads-mes').value = total;
+
+    if (registros.length > 0) {
+      const det = registros.map(r => `S${r.semana}: ${r.leads_semana}`).join(' · ');
+      $('leads-mes-info').textContent =
+        `Semanas anteriores do mês: ${det} (soma ${somaOther}) + atual ${leadsSem} = ${total}`;
+      $('leads-mes-info').classList.add('show');
+    } else {
+      $('leads-mes-info').classList.remove('show');
+    }
+  } catch {
+    $('c-leads-mes').value = leadsSem;
+    $('leads-mes-info').classList.remove('show');
+  }
+}
+
+/* ── Conversão Experiência (auto-cálculo) ─────────────── */
+function calcConversao() {
+  const exp   = intVal('t-alunos-exp');
+  const fech  = intVal('t-fecharam');
+  const pct   = exp > 0 ? ((fech / exp) * 100) : 0;
+  const pctFmt = pct.toFixed(1);
+
+  $('t-conversao').value = pctFmt;
+  $('conversao-valor').textContent = pctFmt;
+  $('conversao-pct').textContent   = exp > 0 ? '%' : '';
+}
+
+/* ── Total Encarteirados (auto-soma) ──────────────────── */
+const ENC_KEYS = ['diego','luiz','vinicius','arthur','caio','lucas','michele'];
+
+function calcTotalEnc() {
+  const total = ENC_KEYS.reduce((sum, k) => sum + intVal(`t-enc-${k}`), 0);
+  $('t-total-enc').value = total;
+  $('total-enc-display').textContent = total;
+}
+
+/* ── Limpar ──────────────────────────────────────────── */
+function limpar(tab) {
+  if (tab === 'comercial') {
+    ['c-leads-semana','c-leads-mes','c-alunos-ativos','c-alunos-anual',
+     'c-alunos-rec','c-alunos-com','c-alunos-nat','c-saidos',
+     'c-novos-sem','c-novos-mes'].forEach(id => $(id).value = '');
+    $('leads-mes-info').classList.remove('show');
+  } else {
+    ['t-revisoes','t-avaliacoes','t-vencidos','t-vencendo',
+     't-alunos-exp','t-fecharam','t-consultoria'].forEach(id => $(id).value = '');
+    ENC_KEYS.forEach(k => $(`t-enc-${k}`).value = '');
+    calcTotalEnc();
+    calcConversao();
+  }
+}
+
+/* ── Salvar Comercial ─────────────────────────────────── */
+async function salvarComercial() {
+  const { semana, mes, ano } = getPeriodo();
+  if (!semana || !mes || !ano) {
+    toast('Preencha Semana, Mês e Ano antes de salvar.', 'err'); return;
+  }
+  await calcLeadsMes();
+
+  const body = {
+    semana, mes, ano,
+    leads_semana:             intVal('c-leads-semana'),
+    leads_mes:                intVal('c-leads-mes'),
+    alunos_ativos:            intVal('c-alunos-ativos'),
+    alunos_anual:             intVal('c-alunos-anual'),
+    alunos_mensal_recorrente: intVal('c-alunos-rec'),
+    alunos_mensal_comum:      intVal('c-alunos-com'),
+    alunos_natacao:           intVal('c-alunos-nat'),
+    alunos_saidos_mes:        intVal('c-saidos'),
+    alunos_novos_semana:      intVal('c-novos-sem'),
+    alunos_novos_mes:         intVal('c-novos-mes'),
+  };
+
+  try {
+    const r = await fetch('/api/comercial', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.erro || 'Erro ao salvar');
+    savedCId = d.id;
+    updateStatus();
+    toast(`✓ Dados comerciais salvos! (ID ${d.id})`, 'ok');
+  } catch(err) {
+    toast(err.message, 'err');
+  }
+}
+
+/* ── Salvar Técnico ───────────────────────────────────── */
+async function salvarTecnico() {
+  const { semana, mes, ano } = getPeriodo();
+  if (!semana || !mes || !ano) {
+    toast('Preencha Semana, Mês e Ano antes de salvar.', 'err'); return;
+  }
+  calcConversao();
+  calcTotalEnc();
+
+  const body = {
+    semana, mes, ano,
+    revisoes_treinos:            intVal('t-revisoes'),
+    novas_avaliacoes:            intVal('t-avaliacoes'),
+    treinos_vencidos:            intVal('t-vencidos'),
+    treinos_vencendo_7dias:      intVal('t-vencendo'),
+    alunos_experiencia:          intVal('t-alunos-exp'),
+    alunos_fecharam_experiencia: intVal('t-fecharam'),
+    consultoria_fisica:          intVal('t-consultoria'),
+    total_encarteirados:         intVal('t-total-enc'),
+    encarteirados_diego:         intVal('t-enc-diego'),
+    encarteirados_luiz:          intVal('t-enc-luiz'),
+    encarteirados_vinicius:      intVal('t-enc-vinicius'),
+    encarteirados_arthur:        intVal('t-enc-arthur'),
+    encarteirados_caio:          intVal('t-enc-caio'),
+    encarteirados_lucas:         intVal('t-enc-lucas'),
+    encarteirados_michele:       intVal('t-enc-michele'),
+  };
+
+  try {
+    const r = await fetch('/api/tecnico', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.erro || 'Erro ao salvar');
+    savedTId = d.id;
+    updateStatus();
+    toast(`✓ Dados técnicos salvos! (ID ${d.id})`, 'ok');
+  } catch(err) {
+    toast(err.message, 'err');
+  }
+}
+
+/* ── PDF Dropdown ─────────────────────────────────────── */
+let openPdfMenu = null;
+
+function togglePdf(key) {
+  const menu = $(`pdf-dropdown-${key}`);
+  const isOpen = menu.classList.contains('open');
+  closePdf();
+  if (!isOpen) { menu.classList.add('open'); openPdfMenu = key; }
+}
+
+function closePdf() {
+  document.querySelectorAll('.pdf-dropdown').forEach(m => m.classList.remove('open'));
+  openPdfMenu = null;
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.pdf-wrap')) closePdf();
+});
+
+/* ── Gerar PDF ────────────────────────────────────────── */
+async function gerarPdf(tipo) {
+  closePdf();
+
+  /* Auto-salva o que ainda não foi salvo e é necessário para o tipo */
+  if ((tipo === 'completo' || tipo === 'comercial') && !savedCId) {
+    toast('Salvando dados comerciais antes de gerar o PDF…', 'ok');
+    await salvarComercial();
+    if (!savedCId) return;
+  }
+  if ((tipo === 'completo' || tipo === 'tecnico') && !savedTId) {
+    toast('Salvando dados técnicos antes de gerar o PDF…', 'ok');
+    await salvarTecnico();
+    if (!savedTId) return;
+  }
+
+  /*
+   * Chama POST /api/gerar-pdf com um registro_id principal:
+   *   - completo/comercial → usa savedCId (o endpoint busca o técnico pelo período)
+   *   - tecnico            → usa savedTId
+   */
+  const registro_id = tipo === 'tecnico' ? savedTId : savedCId;
+
+  toast('⬇ Gerando PDF…', 'ok');
+
+  try {
+    const r = await fetch('/api/gerar-pdf', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tipo, registro_id }),
+    });
+    if (!r.ok) {
+      const d = await r.json();
+      throw new Error(d.erro || 'Erro ao gerar PDF');
+    }
+    const cd = r.headers.get('Content-Disposition') || '';
+    const match = cd.match(/filename="([^"]+)"/);
+    const filename = match ? match[1] : 'relatorio.pdf';
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast('✓ PDF baixado com sucesso!', 'ok');
+  } catch (err) {
+    toast(err.message, 'err');
+  }
+}
+
+/* ── Init ─────────────────────────────────────────────── */
+updateStatus();
+
+// Pré-preenche o ano atual
+const anoAtual = new Date().getFullYear();
+$('periodo-ano').value = anoAtual;
+
+// Pré-preenche a semana atual (aproximado)
+const semAtual = Math.ceil((new Date() - new Date(anoAtual, 0, 1)) / (7 * 864e5));
+$('periodo-semana').value = Math.min(semAtual, 52);
+
+// Pré-preenche o mês atual
+$('periodo-mes').value = new Date().getMonth() + 1;
+
+// Calcula leads do mês com os valores iniciais
+calcLeadsMes();
+</script>
+</body>
+</html>

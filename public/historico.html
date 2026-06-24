@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Histórico — Oásis</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --black:    #0a0a0a;
+      --yellow:   #F5C400;
+      --gold-dk:  #C9A217;
+      --offwhite: #1c1c1c;
+      --white:    #141414;
+      --border:   rgba(255,255,255,0.07);
+      --muted:    #888;
+      --text:     #e0e0dc;
+      --success:  #4caf7d;
+      --danger:   #e05252;
+      --radius:   14px;
+      --shadow:   0 8px 40px rgba(0,0,0,0.55);
+      --tr:       .15s ease;
+    }
+    body { font-family: 'Segoe UI', Inter, system-ui, sans-serif; background: #0a0a0a; color: #e0e0dc; min-height: 100vh; }
+
+    /* ── Header ── */
+    .header {
+      position: sticky; top: 0; z-index: 200;
+      background: var(--black); display: flex; align-items: center;
+      justify-content: space-between; padding: 0 40px; height: 68px;
+      border-bottom: 3px solid var(--yellow);
+    }
+    .brand { display: flex; align-items: center; gap: 14px; text-decoration: none; }
+    .brand-icon { width: 40px; height: 40px; background: var(--yellow); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; color: var(--black); }
+    .brand-name { font-size: 18px; font-weight: 800; color: var(--yellow); }
+    .brand-sub  { font-size: 11px; color: rgba(255,255,255,.5); }
+    .nav { display: flex; gap: 4px; }
+    .nav-link { color: rgba(255,255,255,.65); font-size: 13.5px; font-weight: 500; padding: 8px 18px; border-radius: 8px; text-decoration: none; transition: background var(--tr), color var(--tr); }
+    .nav-link:hover  { color: #fff; background: rgba(255,255,255,.08); }
+    .nav-link.active { color: var(--black); background: var(--yellow); font-weight: 700; }
+
+    /* ── Layout ── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px 80px; }
+
+    /* ── Filter bar ── */
+    .filter-card {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px 24px;
+      margin-bottom: 28px; box-shadow: var(--shadow);
+    }
+    .filter-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 14px; }
+    .filter-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+    .filter-field { display: flex; flex-direction: column; gap: 5px; }
+    .filter-field label { font-size: 12px; font-weight: 600; color: var(--black); }
+    .filter-field input, .filter-field select {
+      background: var(--offwhite); border: 1.5px solid var(--border);
+      border-radius: 8px; padding: 9px 12px; font-size: 14px;
+      font-family: inherit; color: var(--black); outline: none;
+      transition: border-color var(--tr); min-width: 120px;
+    }
+    .filter-field input:focus, .filter-field select:focus { border-color: var(--yellow); background: #fff; }
+    .filter-sep { color: var(--muted); font-size: 12px; padding-bottom: 10px; }
+    .btn { padding: 10px 20px; border-radius: 9px; border: none; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; transition: background var(--tr), transform .1s; }
+    .btn:active { transform: scale(.98); }
+    .btn-primary   { background: var(--black); color: #fff; }
+    .btn-primary:hover { background: #333; }
+    .btn-ghost     { background: none; color: var(--muted); border: 1.5px solid var(--border); }
+    .btn-ghost:hover { border-color: var(--black); color: var(--black); }
+    .btn-yellow    { background: var(--yellow); color: var(--black); }
+    .btn-yellow:hover { background: #d9ac00; }
+    .btn-sm { padding: 7px 14px; font-size: 12px; border-radius: 7px; }
+
+    /* ── Page header ── */
+    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+    .page-title { font-size: 22px; font-weight: 800; }
+    .page-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+    .total-badge { background: var(--black); color: var(--yellow); font-size: 13px; font-weight: 700; padding: 6px 16px; border-radius: 20px; }
+
+    /* ── Timeline ── */
+    .timeline { position: relative; }
+    .timeline::before {
+      content: ''; position: absolute; left: 19px; top: 0; bottom: 0; width: 2px;
+      background: linear-gradient(to bottom, var(--yellow), rgba(245,196,0,.1));
+    }
+    .timeline-group { margin-bottom: 32px; }
+    .timeline-month {
+      font-size: 12px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .8px;
+      padding: 0 0 10px 50px; margin-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .timeline-item { display: flex; gap: 18px; margin-bottom: 16px; align-items: flex-start; }
+    .timeline-dot {
+      width: 40px; height: 40px; background: var(--yellow); border-radius: 50%;
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 800; color: var(--black); z-index: 1; margin-top: 10px;
+      border: 3px solid #f7f7f5; box-shadow: 0 0 0 2px var(--yellow);
+    }
+    .timeline-dot.parcial { background: #f0e060; box-shadow: 0 0 0 2px #f0e060; }
+    .timeline-dot.sem-tec { background: var(--offwhite); color: var(--muted); box-shadow: 0 0 0 2px var(--border); }
+
+    /* ── Card ── */
+    .card {
+      flex: 1; background: var(--white); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
+      transition: box-shadow var(--tr), transform var(--tr);
+    }
+    .card:hover { box-shadow: 0 6px 28px rgba(0,0,0,.11); transform: translateY(-2px); }
+    .card-head {
+      background: var(--black); padding: 14px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .card-head-left .semana { font-size: 18px; font-weight: 800; color: var(--yellow); }
+    .card-head-left .periodo { font-size: 12px; color: rgba(255,255,255,.55); margin-top: 2px; }
+    .card-badges { display: flex; gap: 6px; }
+    .badge { padding: 3px 9px; border-radius: 20px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+    .badge-com { background: var(--yellow); color: var(--black); }
+    .badge-tec { background: rgba(255,255,255,.15); color: rgba(255,255,255,.8); }
+    .badge-missing { background: rgba(255,255,255,.08); color: rgba(255,255,255,.35); }
+
+    .card-kpis {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      border-bottom: 1px solid var(--border);
+    }
+    .kpi { padding: 14px 16px; border-right: 1px solid var(--border); }
+    .kpi:last-child { border-right: none; }
+    .kpi-label { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 4px; }
+    .kpi-val { font-size: 22px; font-weight: 800; color: var(--black); }
+    .kpi-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    .card-foot {
+      padding: 12px 16px; display: flex; align-items: center;
+      justify-content: space-between; gap: 8px; flex-wrap: wrap;
+    }
+    .card-date { font-size: 11px; color: var(--muted); }
+    .card-actions { display: flex; gap: 8px; }
+
+    /* ── Estado vazio ── */
+    .empty-state {
+      text-align: center; padding: 60px 24px; color: var(--muted);
+    }
+    .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: .4; }
+    .empty-title { font-size: 18px; font-weight: 700; color: var(--black); margin-bottom: 8px; }
+    .empty-sub { font-size: 14px; margin-bottom: 24px; }
+
+    /* ── Loading ── */
+    .loading { text-align: center; padding: 48px; color: var(--muted); font-size: 14px; }
+    .spinner { display: inline-block; width: 28px; height: 28px; border: 3px solid var(--border); border-top-color: var(--yellow); border-radius: 50%; animation: spin .7s linear infinite; margin-bottom: 12px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; z-index: 500;
+      background: rgba(0,0,0,.55); backdrop-filter: blur(4px);
+      align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--white); border-radius: 20px; width: 100%;
+      max-width: 860px; max-height: 90vh; overflow-y: auto;
+      box-shadow: 0 24px 80px rgba(0,0,0,.25);
+    }
+    .modal-head {
+      position: sticky; top: 0; background: var(--black); z-index: 10;
+      padding: 20px 28px; display: flex; align-items: center; justify-content: space-between;
+      border-radius: 20px 20px 0 0; border-bottom: 3px solid var(--yellow);
+    }
+    .modal-title { font-size: 16px; font-weight: 800; color: var(--yellow); }
+    .modal-period { font-size: 12px; color: rgba(255,255,255,.55); margin-top: 3px; }
+    .modal-close {
+      background: rgba(255,255,255,.12); border: none; cursor: pointer;
+      width: 36px; height: 36px; border-radius: 50%; color: #fff;
+      font-size: 18px; display: flex; align-items: center; justify-content: center;
+      transition: background var(--tr);
+    }
+    .modal-close:hover { background: rgba(255,255,255,.22); }
+    .modal-body { padding: 28px; }
+    .modal-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .modal-section-title {
+      font-size: 11px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .6px; margin-bottom: 12px;
+      padding-bottom: 8px; border-bottom: 2px solid var(--yellow);
+    }
+    .modal-rows { display: flex; flex-direction: column; gap: 0; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+    .modal-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 9px 14px; font-size: 13px;
+    }
+    .modal-row:nth-child(odd) { background: var(--offwhite); }
+    .modal-row:nth-child(even) { background: var(--white); }
+    .modal-row-label { color: var(--muted); font-weight: 500; }
+    .modal-row-val { font-weight: 800; color: var(--black); }
+    .modal-foot {
+      padding: 16px 28px; border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: flex-end; gap: 10px;
+    }
+    .modal-empty { color: var(--muted); font-size: 13px; padding: 16px 0; text-align: center; font-style: italic; }
+
+    /* Tabela encarteirados no modal */
+    .enc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); margin-top: 12px; }
+    .enc-cell { padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; }
+    .enc-cell:nth-child(odd) { background: var(--offwhite); }
+    .enc-cell:nth-child(even) { background: var(--white); }
+    .enc-nome { font-size: 12px; font-weight: 600; color: var(--muted); }
+    .enc-val  { font-size: 16px; font-weight: 800; }
+
+    /* ── Toast ── */
+    #toast { position: fixed; bottom: 28px; right: 28px; padding: 13px 20px; border-radius: 10px; font-size: 14px; font-weight: 600; box-shadow: 0 8px 32px rgba(0,0,0,.18); opacity: 0; transform: translateY(10px); transition: opacity .25s, transform .25s; pointer-events: none; z-index: 999; max-width: 340px; }
+    #toast.show { opacity: 1; transform: translateY(0); }
+    #toast.ok  { background: var(--black); color: var(--yellow); }
+    #toast.err { background: #c0392b; color: #fff; }
+
+    @media (max-width: 800px) {
+      .header { padding: 0 16px; }
+      .container { padding: 16px 12px 60px; }
+      .card-kpis { grid-template-columns: repeat(2, 1fr); }
+      .modal-cols { grid-template-columns: 1fr; }
+      .filter-row { flex-direction: column; align-items: stretch; }
+      .timeline::before { display: none; }
+      .timeline-item { flex-direction: column; }
+      .timeline-dot { display: none; }
+      .brand-logo { height: 36px; }
+    }
+
+    /* ── Header premium ────────────────────────────────── */
+    .header {
+      background: rgba(8,8,8,0.94) !important;
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-bottom: 1px solid rgba(245,196,0,0.2) !important;
+      box-shadow: 0 1px 0 rgba(245,196,0,0.12), 0 4px 24px rgba(0,0,0,0.6);
+      height: 108px;
+    }
+    .brand-logo { height: 92px; width: auto; object-fit: contain; display: block; }
+    .brand-fallback { display: flex; align-items: center; gap: 12px; }
+    .nav-link.active { box-shadow: 0 4px 14px rgba(245,196,0,0.3); }
+    .nav-link { border: 1px solid transparent; }
+    .nav-link:hover { border-color: rgba(255,255,255,0.07); }
+
+    /* ── Dark text fixes ───────────────────────────────── */
+    .page-title, .empty-title { color: #e0e0dc; }
+    .page-sub, .empty-sub  { color: #888; }
+    .filter-field label { color: #888; }
+    .filter-field input, .filter-field select { color: #e0e0dc; }
+    .filter-field select option { background: #1c1c1c; color: #e0e0dc; }
+    .kpi-val { color: #e0e0dc; }
+    .modal-row-val { color: #e0e0dc; }
+    .modal { background: #141414; }
+    .card:hover { box-shadow: 0 8px 32px rgba(0,0,0,.6); transform: translateY(-2px); }
+    .total-badge { background: var(--yellow); color: #1a1a1a; }
+    .timeline-dot { border-color: #0a0a0a; }
+    .timeline-dot.sem-tec { background: #252525; color: #666; box-shadow: 0 0 0 2px rgba(255,255,255,0.1); }
+    .btn-primary { background: #1c1c1c; color: #e0e0dc; border: 1px solid rgba(255,255,255,0.1); }
+    .btn-primary:hover { background: #2a2a2a; border-color: rgba(255,255,255,0.15); }
+    .btn-yellow { background: var(--yellow); color: #1a1a1a; }
+    .btn-yellow:hover { background: #d9ac00; }
+    #toast { backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,.08); }
+    #toast.ok { background: rgba(20,20,20,.95); }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <a class="brand" href="/">
+    <img src="/assets/logo.png" class="brand-logo" alt="Oásis Centro de Treinamento"
+         onerror="this.style.display='none';document.getElementById('bfb').style.display='flex'">
+    <div id="bfb" class="brand-fallback" style="display:none">
+      <div class="brand-icon" style="width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;color:#1a1a1a;flex-shrink:0;background:linear-gradient(135deg,#F5C400,#C9A217);border-radius:12px">O</div>
+      <div style="display:flex;flex-direction:column;line-height:1.2">
+        <span class="brand-name">OÁSIS</span>
+        <span class="brand-sub">Centro de Treinamento</span>
+      </div>
+    </div>
+  </a>
+  <nav class="nav">
+    <a class="nav-link" href="/">Dashboard</a>
+    <a class="nav-link" href="/inserir.html">Inserir Dados</a>
+    <span class="nav-link active">Histórico</span>
+    <a class="nav-link" href="/comparar.html">Comparar Períodos</a>
+  </nav>
+</header>
+
+<div class="container">
+
+  <!-- Page header -->
+  <div class="page-header">
+    <div>
+      <div class="page-title">Histórico de Registros</div>
+      <div class="page-sub">Todos os dados semanais salvos no sistema</div>
+    </div>
+    <span class="total-badge" id="total-badge">Carregando…</span>
+  </div>
+
+  <!-- Filtros -->
+  <div class="filter-card">
+    <div class="filter-label">Filtrar registros</div>
+    <div class="filter-row">
+      <div class="filter-field">
+        <label>Mês</label>
+        <select id="f-mes">
+          <option value="">Todos</option>
+          <option value="1">Janeiro</option><option value="2">Fevereiro</option>
+          <option value="3">Março</option><option value="4">Abril</option>
+          <option value="5">Maio</option><option value="6">Junho</option>
+          <option value="7">Julho</option><option value="8">Agosto</option>
+          <option value="9">Setembro</option><option value="10">Outubro</option>
+          <option value="11">Novembro</option><option value="12">Dezembro</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label>Ano</label>
+        <input id="f-ano" type="number" min="2020" max="2099" placeholder="Todos" style="width:100px" />
+      </div>
+      <div class="filter-sep">ou intervalo personalizado</div>
+      <div class="filter-field">
+        <label>De</label>
+        <input id="f-ini" type="date" />
+      </div>
+      <div class="filter-field">
+        <label>Até</label>
+        <input id="f-fim" type="date" />
+      </div>
+      <button class="btn btn-primary" onclick="carregar()">Filtrar</button>
+      <button class="btn btn-ghost" onclick="limparFiltros()">Limpar</button>
+    </div>
+  </div>
+
+  <!-- Timeline -->
+  <div id="timeline-wrap"></div>
+
+</div><!-- /container -->
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="fecharModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title" id="modal-title">Semana — · — de —</div>
+        <div class="modal-period" id="modal-period">Registrado em —</div>
+      </div>
+      <button class="modal-close" onclick="fecharModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-foot" id="modal-foot"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const MESES = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+               'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+let periodos = [];   // array de objetos { key, semana, mes, ano, comercial, tecnico }
+let modalPeriodo = null;
+
+/* ── Carregar ─────────────────────────────────────────── */
+async function carregar() {
+  const mes     = document.getElementById('f-mes').value;
+  const ano     = document.getElementById('f-ano').value;
+  const ini     = document.getElementById('f-ini').value;
+  const fim     = document.getElementById('f-fim').value;
+
+  const params = new URLSearchParams();
+  if (mes) params.set('mes', mes);
+  if (ano) params.set('ano', ano);
+  if (ini) params.set('data_inicio', ini);
+  if (fim) params.set('data_fim', fim);
+
+  const wrap = document.getElementById('timeline-wrap');
+  wrap.innerHTML = '<div class="loading"><div class="spinner"></div><br>Carregando registros…</div>';
+
+  try {
+    const r = await fetch(`/api/historico?${params}`);
+    const d = await r.json();
+    periodos = combinarPeriodos(d.comercial, d.tecnico);
+    renderTimeline();
+    const n = periodos.length;
+    document.getElementById('total-badge').textContent = `${n} período${n !== 1 ? 's' : ''}`;
+  } catch (err) {
+    wrap.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Erro ao carregar</div><div class="empty-sub">${err.message}</div></div>`;
+  }
+}
+
+function limparFiltros() {
+  ['f-mes','f-ano','f-ini','f-fim'].forEach(id => document.getElementById(id).value = '');
+  carregar();
+}
+
+/* ── Combinar comercial + técnico por período ─────────── */
+function combinarPeriodos(comercial, tecnico) {
+  const map = {};
+  const key = r => `${r.ano}-${String(r.mes).padStart(2,'0')}-${String(r.semana).padStart(2,'0')}`;
+
+  (comercial || []).forEach(c => {
+    const k = key(c);
+    if (!map[k]) map[k] = { key: k, semana: c.semana, mes: c.mes, ano: c.ano, comercial: null, tecnico: null };
+    // Mantém o mais recente se houver duplicata
+    if (!map[k].comercial || c.id > map[k].comercial.id) map[k].comercial = c;
+  });
+  (tecnico || []).forEach(t => {
+    const k = key(t);
+    if (!map[k]) map[k] = { key: k, semana: t.semana, mes: t.mes, ano: t.ano, comercial: null, tecnico: null };
+    if (!map[k].tecnico || t.id > map[k].tecnico.id) map[k].tecnico = t;
+  });
+
+  return Object.values(map).sort((a, b) => {
+    if (b.ano !== a.ano) return b.ano - a.ano;
+    if (b.mes !== a.mes) return b.mes - a.mes;
+    return b.semana - a.semana;
+  });
+}
+
+/* ── Render timeline agrupado por mês ─────────────────── */
+function renderTimeline() {
+  const wrap = document.getElementById('timeline-wrap');
+  if (!periodos.length) {
+    wrap.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">📋</div>
+        <div class="empty-title">Nenhum registro encontrado</div>
+        <div class="empty-sub">Tente ajustar os filtros ou insira novos dados.</div>
+        <a href="/inserir.html" class="btn btn-yellow">+ Inserir Dados</a>
+      </div>`;
+    return;
+  }
+
+  // Agrupa por "mês/ano"
+  const grupos = {};
+  periodos.forEach(p => {
+    const gk = `${p.ano}-${String(p.mes).padStart(2,'0')}`;
+    if (!grupos[gk]) grupos[gk] = { mes: p.mes, ano: p.ano, items: [] };
+    grupos[gk].items.push(p);
+  });
+
+  const html = Object.entries(grupos)
+    .sort(([a], [b]) => b.localeCompare(a))
+    .map(([, g]) => `
+      <div class="timeline-group">
+        <div class="timeline-month">${MESES[g.mes]} de ${g.ano}</div>
+        <div class="timeline">
+          ${g.items.map(p => buildCard(p)).join('')}
+        </div>
+      </div>
+    `).join('');
+
+  wrap.innerHTML = html;
+}
+
+function buildCard(p) {
+  const c = p.comercial, t = p.tecnico;
+  const temC = !!c, temT = !!t;
+
+  const dotClass = (temC && temT) ? '' : temC ? 'parcial' : 'sem-tec';
+  const semLabel = `S${p.semana}`;
+
+  const ativos  = c?.alunos_ativos      ?? '—';
+  const leads   = c?.leads_semana       ?? '—';
+  const encart  = t?.total_encarteirados ?? '—';
+  const conv    = t?.conversao_experiencia != null
+    ? `${Number(t.conversao_experiencia).toFixed(1)}%` : '—';
+
+  const dataReg = (c?.data_registro || t?.data_registro || '').substring(0, 10);
+
+  const badgesHtml = `
+    <div class="card-badges">
+      <span class="badge ${temC ? 'badge-com' : 'badge-missing'}">${temC ? '📊 Comercial' : 'Sem Comercial'}</span>
+      <span class="badge ${temT ? 'badge-tec' : 'badge-missing'}">${temT ? '🏋️ Técnico' : 'Sem Técnico'}</span>
+    </div>`;
+
+  return `
+    <div class="timeline-item">
+      <div class="timeline-dot ${dotClass}">${semLabel}</div>
+      <div class="card">
+        <div class="card-head">
+          <div class="card-head-left">
+            <div class="semana">Semana ${p.semana}</div>
+            <div class="periodo">${MESES[p.mes]} de ${p.ano}</div>
+          </div>
+          ${badgesHtml}
+        </div>
+        <div class="card-kpis">
+          <div class="kpi">
+            <div class="kpi-label">Alunos Ativos</div>
+            <div class="kpi-val">${ativos}</div>
+            <div class="kpi-sub">na academia</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Leads / Semana</div>
+            <div class="kpi-val">${leads}</div>
+            <div class="kpi-sub">captados</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Encarteirados</div>
+            <div class="kpi-val">${encart}</div>
+            <div class="kpi-sub">total geral</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Conversão Exp.</div>
+            <div class="kpi-val">${conv}</div>
+            <div class="kpi-sub">experiência → aluno</div>
+          </div>
+        </div>
+        <div class="card-foot">
+          <span class="card-date">Registrado em ${dataReg || '—'}</span>
+          <div class="card-actions">
+            <button class="btn btn-ghost btn-sm" onclick="verDetalhes('${p.key}')">🔍 Ver Detalhes</button>
+            <button class="btn btn-yellow btn-sm" onclick="gerarPdf('${p.key}')">⬇ PDF</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ── Modal detalhes ───────────────────────────────────── */
+function verDetalhes(key) {
+  const p = periodos.find(x => x.key === key);
+  if (!p) return;
+  modalPeriodo = p;
+
+  document.getElementById('modal-title').textContent =
+    `Semana ${p.semana} · ${MESES[p.mes]} de ${p.ano}`;
+  document.getElementById('modal-period').textContent =
+    `Registrado em ${(p.comercial?.data_registro || p.tecnico?.data_registro || '').substring(0, 10)}`;
+
+  const body = document.getElementById('modal-body');
+  body.innerHTML = `<div class="modal-cols">${colComercial(p.comercial)}${colTecnico(p.tecnico, p.comercial?.alunos_ativos)}</div>`;
+
+  document.getElementById('modal-foot').innerHTML = `
+    <button class="btn btn-ghost btn-sm" onclick="fecharModal()">Fechar</button>
+    <button class="btn btn-yellow btn-sm" onclick="gerarPdf('${key}')">⬇ Gerar PDF</button>`;
+
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function colComercial(c) {
+  if (!c) return `<div><div class="modal-section-title">Equipe Comercial</div><div class="modal-empty">Dados comerciais não inseridos neste período.</div></div>`;
+  return `
+    <div>
+      <div class="modal-section-title">Equipe Comercial</div>
+      <div class="modal-rows">
+        ${mr('Leads na Semana',    c.leads_semana)}
+        ${mr('Leads no Mês',       c.leads_mes)}
+        ${mr('Alunos Ativos',      c.alunos_ativos)}
+        ${mr('Plano Anual',        c.alunos_anual)}
+        ${mr('Mensal Recorrente',  c.alunos_mensal_recorrente)}
+        ${mr('Mensal Comum',       c.alunos_mensal_comum)}
+        ${mr('Natação',            c.alunos_natacao)}
+        ${mr('Novos na Semana',    c.alunos_novos_semana)}
+        ${mr('Novos no Mês',       c.alunos_novos_mes)}
+        ${mr('Saídas no Mês',      c.alunos_saidos_mes)}
+      </div>
+    </div>`;
+}
+
+function colTecnico(t, alunosAtivos) {
+  if (!t) return `<div><div class="modal-section-title">Equipe Técnica</div><div class="modal-empty">Dados técnicos não inseridos neste período.</div></div>`;
+  const conv = t.conversao_experiencia != null ? `${Number(t.conversao_experiencia).toFixed(1)}%` : '—';
+  const treinadores = [
+    ['Diego',    t.encarteirados_diego],
+    ['Luiz',     t.encarteirados_luiz],
+    ['Vinícius', t.encarteirados_vinicius],
+    ['Arthur',   t.encarteirados_arthur],
+    ['Caio',     t.encarteirados_caio],
+    ['Lucas',    t.encarteirados_lucas],
+    ['Michele',  t.encarteirados_michele],
+  ];
+  const temAtivos = alunosAtivos > 0;
+
+  const encCells = treinadores.map(([n, v]) => {
+    const val = v ?? 0;
+    const pct = temAtivos ? ((val / alunosAtivos) * 100).toFixed(1) + '%' : null;
+    return `
+      <div class="enc-cell" style="flex-direction:column;align-items:flex-start;gap:2px;padding:10px 14px">
+        <span class="enc-nome">${n}</span>
+        <div style="display:flex;align-items:baseline;gap:8px">
+          <span class="enc-val">${val}</span>
+          ${pct ? `<span style="font-size:12px;font-weight:700;color:#F5C400;background:#1a1a1a;padding:1px 7px;border-radius:10px">${pct}</span>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+
+  const totalPct = temAtivos
+    ? `<span style="font-size:12px;color:#F5C400;font-weight:700"> · ${((t.total_encarteirados / alunosAtivos) * 100).toFixed(1)}% dos ativos</span>`
+    : '';
+
+  return `
+    <div>
+      <div class="modal-section-title">Equipe Técnica</div>
+      <div class="modal-rows">
+        ${mr('Revisões de Treinos',   t.revisoes_treinos)}
+        ${mr('Novas Avaliações',      t.novas_avaliacoes)}
+        ${mr('Treinos Vencidos',      t.treinos_vencidos)}
+        ${mr('Vencendo em 7 dias',    t.treinos_vencendo_7dias)}
+        ${mr('Alunos em Experiência', t.alunos_experiencia)}
+        ${mr('Fecharam Experiência',  t.alunos_fecharam_experiencia)}
+        ${mr('Conversão Exp.',        conv)}
+        ${mr('Consultoria Física',    t.consultoria_fisica)}
+        ${mr('Total Encarteirados',   t.total_encarteirados)}
+      </div>
+      <div class="modal-section-title" style="margin-top:16px">
+        Encarteirados por Treinador${totalPct}
+        ${temAtivos ? `<span style="margin-left:auto;font-size:10px;font-weight:500;color:#aaa">${alunosAtivos} alunos ativos</span>` : ''}
+      </div>
+      <div class="enc-grid" style="grid-template-columns:repeat(2,1fr)">
+        ${encCells}
+      </div>
+    </div>`;
+}
+
+function mr(label, val) {
+  const display = val == null ? '—' : val;
+  return `<div class="modal-row"><span class="modal-row-label">${label}</span><span class="modal-row-val">${display}</span></div>`;
+}
+
+function fecharModal(e) {
+  if (e && e.target !== document.getElementById('modal-overlay')) return;
+  document.getElementById('modal-overlay').classList.remove('open');
+  modalPeriodo = null;
+}
+
+/* ── Gerar PDF ────────────────────────────────────────── */
+async function gerarPdf(key) {
+  const p = periodos.find(x => x.key === key);
+  if (!p) return;
+
+  const tipo = (p.comercial && p.tecnico) ? 'completo'
+             : p.comercial ? 'comercial' : 'tecnico';
+  const registro_id = p.comercial?.id ?? p.tecnico?.id;
+
+  toast('⬇ Gerando PDF…', 'ok');
+  try {
+    const r = await fetch('/api/gerar-pdf', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tipo, registro_id }),
+    });
+    if (!r.ok) {
+      const d = await r.json();
+      throw new Error(d.erro || 'Erro ao gerar PDF');
+    }
+    const cd = r.headers.get('Content-Disposition') || '';
+    const match = cd.match(/filename="([^"]+)"/);
+    const filename = match ? match[1] : 'relatorio.pdf';
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast('✓ PDF baixado com sucesso!', 'ok');
+  } catch (err) {
+    toast(err.message, 'err');
+  }
+}
+
+/* ── Toast ────────────────────────────────────────────── */
+let toastTimer;
+function toast(msg, tipo = 'ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = `show ${tipo}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.className = '', 4000);
+}
+
+/* ── Fechar modal com Escape ──────────────────────────── */
+document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharModal(); });
+
+/* ── Init ─────────────────────────────────────────────── */
+carregar();
+</script>
+</body>
+</html>

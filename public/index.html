@@ -1,0 +1,1512 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oásis — Centro de Treinamento & Saúde</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+  <style>
+    /* ── Reset & Variáveis ─────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0a0a0a;
+      --surface:   #141414;
+      --surface-2: #1c1c1c;
+      --surface-3: #232323;
+      --gold:      #F5C400;
+      --gold-dk:   #C9A217;
+      --gold-dim:  rgba(245,196,0,0.13);
+      --gold-glow: rgba(245,196,0,0.18);
+      --white:     #f0f0ec;
+      --text:      #e0e0dc;
+      --muted:     #505050;
+      --muted-2:   #888;
+      --border:    rgba(255,255,255,0.07);
+      --border-g:  rgba(245,196,0,0.3);
+      --danger:    #e05252;
+      --success:   #4caf7d;
+      --radius:    14px;
+      --shadow:    0 8px 40px rgba(0,0,0,0.5);
+      --transition:.2s ease;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Segoe UI', Inter, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Animações ─────────────────────────────────────── */
+    @keyframes spin     { to { transform: rotate(360deg); } }
+    @keyframes fadeInUp { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
+
+    /* ── Header ────────────────────────────────────────── */
+    .header {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(8,8,8,0.94);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 40px;
+      height: 108px;
+      border-bottom: 1px solid rgba(245,196,0,0.2);
+      box-shadow: 0 1px 0 rgba(245,196,0,0.12), 0 4px 24px rgba(0,0,0,0.6);
+    }
+
+    .brand { display: flex; align-items: center; gap: 14px; text-decoration: none; }
+
+    .brand-logo { height: 92px; width: auto; object-fit: contain; display: block; }
+
+    .brand-fallback { display: flex; align-items: center; gap: 12px; }
+    .brand-icon {
+      width: 42px; height: 42px;
+      background: linear-gradient(135deg, var(--gold), var(--gold-dk));
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; font-weight: 900; color: #1a1a1a;
+      flex-shrink: 0;
+      box-shadow: 0 4px 16px rgba(245,196,0,0.35);
+    }
+    .brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .brand-name { font-size: 18px; font-weight: 900; color: var(--gold); letter-spacing: 1px; }
+    .brand-sub  { font-size: 10px; color: rgba(255,255,255,.4); letter-spacing: .5px; text-transform: uppercase; }
+
+    .nav { display: flex; align-items: center; gap: 4px; }
+
+    .nav-link {
+      text-decoration: none;
+      color: rgba(255,255,255,.5);
+      font-size: 13px; font-weight: 500;
+      padding: 8px 18px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      transition: background var(--transition), color var(--transition), border-color var(--transition);
+      cursor: pointer;
+      letter-spacing: .3px;
+    }
+    .nav-link:hover  { color: var(--white); background: rgba(255,255,255,.07); border-color: var(--border); }
+    .nav-link.active { color: #1a1a1a; background: var(--gold); font-weight: 700; border-color: var(--gold); box-shadow: 0 4px 14px rgba(245,196,0,0.3); }
+
+    /* ── Página / Seções ───────────────────────────────── */
+    .view { display: none; padding: 40px 40px 80px; max-width: 1360px; margin: 0 auto; }
+    .view.active { display: block; }
+
+    /* ── Seção título ──────────────────────────────────── */
+    .section-header {
+      display: flex; align-items: flex-end; justify-content: space-between;
+      margin-bottom: 32px;
+      animation: fadeInUp .4s ease both;
+    }
+    .section-title {
+      font-size: 26px; font-weight: 900;
+      background: linear-gradient(135deg, var(--white) 0%, rgba(255,255,255,0.55) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; letter-spacing: -.3px;
+    }
+    .section-sub { font-size: 13px; color: var(--muted-2); margin-top: 4px; }
+    .last-update { font-size: 12px; color: var(--muted); }
+    .last-update span { color: var(--text); font-weight: 600; }
+
+    /* ── KPI Cards ─────────────────────────────────────── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+
+    .kpi-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 26px;
+      display: flex; flex-direction: column; gap: 12px;
+      border: 1px solid var(--border);
+      position: relative; overflow: hidden;
+      transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
+      animation: fadeInUp .5s ease both;
+      cursor: default;
+    }
+    .kpi-card:nth-child(1) { animation-delay:.05s; }
+    .kpi-card:nth-child(2) { animation-delay:.10s; }
+    .kpi-card:nth-child(3) { animation-delay:.15s; }
+    .kpi-card:nth-child(4) { animation-delay:.20s; }
+    .kpi-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--border-g);
+      box-shadow: 0 16px 48px rgba(0,0,0,.55), 0 0 24px rgba(245,196,0,0.1);
+    }
+    .kpi-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold), var(--gold-dk), transparent);
+    }
+    .kpi-card::after {
+      content: '';
+      position: absolute; top: -50px; right: -50px;
+      width: 130px; height: 130px;
+      background: radial-gradient(circle, rgba(245,196,0,0.07) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .kpi-icon {
+      width: 40px; height: 40px;
+      background: var(--gold-dim);
+      border: 1px solid rgba(245,196,0,.2);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+
+    .kpi-label { font-size: 11px; font-weight: 700; color: var(--muted-2); text-transform: uppercase; letter-spacing: .7px; }
+    .kpi-value { font-size: 36px; font-weight: 900; color: var(--white); line-height: 1; letter-spacing: -1px; }
+    .kpi-delta { font-size: 12px; color: var(--muted); }
+    .kpi-delta.pos { color: var(--success); }
+    .kpi-delta.neg { color: var(--danger); }
+
+    /* ── Gráficos ──────────────────────────────────────── */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 26px;
+      transition: border-color var(--transition), box-shadow var(--transition);
+      animation: fadeInUp .5s ease .25s both;
+    }
+    .chart-card:hover {
+      border-color: rgba(245,196,0,0.18);
+      box-shadow: 0 8px 36px rgba(0,0,0,.4);
+    }
+
+    .chart-title {
+      font-size: 14px; font-weight: 700; color: var(--white);
+      margin-bottom: 4px;
+    }
+    .chart-sub { font-size: 12px; color: var(--muted-2); margin-bottom: 20px; }
+    .chart-wrap { position: relative; height: 260px; }
+
+    /* ── Formulários ───────────────────────────────────── */
+    .tabs { display: flex; gap: 4px; margin-bottom: 28px; border-bottom: 1px solid var(--border); }
+    .tab-btn {
+      background: none; border: none; cursor: pointer;
+      font-size: 14px; font-weight: 600; color: var(--muted-2);
+      padding: 12px 24px; border-radius: 8px 8px 0 0;
+      transition: color var(--transition), background var(--transition);
+      position: relative;
+    }
+    .tab-btn.active { color: var(--gold); }
+    .tab-btn.active::after {
+      content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 2px;
+      background: var(--gold);
+    }
+    .tab-btn:hover { color: var(--white); background: rgba(255,255,255,.05); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .form-card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); padding: 28px 32px; }
+    .form-section-title {
+      font-size: 11px; font-weight: 700; color: var(--muted-2);
+      text-transform: uppercase; letter-spacing: .7px;
+      margin: 24px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border);
+    }
+    .form-section-title:first-child { margin-top: 0; }
+    .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .form-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+    .form-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { font-size: 12px; font-weight: 600; color: var(--muted-2); }
+    .field input, .field select {
+      background: var(--surface-2); border: 1.5px solid var(--border);
+      border-radius: 8px; padding: 10px 12px;
+      font-size: 14px; font-family: inherit; color: var(--white);
+      transition: border-color var(--transition), box-shadow var(--transition);
+      outline: none; -moz-appearance: textfield;
+    }
+    .field input::-webkit-inner-spin-button,
+    .field input::-webkit-outer-spin-button { -webkit-appearance: none; }
+    .field input:focus, .field select:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(245,196,0,0.1); }
+    .field select { cursor: pointer; }
+    .field select option { background: var(--surface-2); }
+
+    .required-badge {
+      display: inline-block; background: var(--gold); color: #1a1a1a;
+      font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; margin-left: 5px;
+    }
+    .form-actions {
+      display: flex; justify-content: flex-end; gap: 12px;
+      margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border);
+    }
+    .btn {
+      padding: 11px 28px; border-radius: 9px; border: none;
+      font-size: 14px; font-weight: 700; cursor: pointer;
+      transition: all .18s ease; letter-spacing: .3px;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn-primary { background: linear-gradient(135deg, var(--gold), var(--gold-dk)); color: #1a1a1a; box-shadow: 0 4px 16px rgba(245,196,0,0.3); }
+    .btn-primary:hover { box-shadow: 0 6px 24px rgba(245,196,0,0.45); transform: translateY(-1px); }
+    .btn-ghost { background: var(--surface-2); color: var(--muted-2); border: 1.5px solid var(--border); }
+    .btn-ghost:hover { border-color: rgba(255,255,255,.2); color: var(--white); }
+
+    /* ── Histórico / Tabelas ───────────────────────────── */
+    .filter-bar {
+      display: flex; align-items: flex-end; gap: 12px;
+      background: var(--surface); border-radius: var(--radius);
+      padding: 18px 22px; margin-bottom: 24px;
+      border: 1px solid var(--border); flex-wrap: wrap;
+    }
+    .filter-bar .field { min-width: 100px; }
+    .filter-bar label { font-size: 11px; }
+    .filter-bar input, .filter-bar select {
+      background: var(--surface-2); border: 1.5px solid var(--border);
+      border-radius: 7px; padding: 8px 10px;
+      font-size: 13px; font-family: inherit; outline: none; color: var(--white);
+    }
+    .filter-bar input:focus, .filter-bar select:focus { border-color: var(--gold); }
+
+    .hist-tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+    .hist-tab {
+      background: none; border: none; cursor: pointer;
+      font-size: 13px; font-weight: 600; color: var(--muted-2);
+      padding: 8px 18px; border-radius: 8px;
+      transition: background var(--transition), color var(--transition);
+    }
+    .hist-tab.active { background: var(--gold); color: #1a1a1a; }
+    .hist-tab:not(.active):hover { background: var(--surface-2); color: var(--white); }
+
+    .table-card { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    .table-scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead th {
+      background: var(--surface-2); color: var(--muted-2);
+      padding: 11px 14px; text-align: left;
+      font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px;
+      white-space: nowrap; border-bottom: 1px solid var(--border);
+    }
+    tbody tr { border-bottom: 1px solid var(--border); }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--surface-2); }
+    tbody td { padding: 11px 14px; color: var(--text); white-space: nowrap; }
+    tbody td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .badge-semana {
+      display: inline-flex; align-items: center;
+      background: var(--gold-dim); color: var(--gold);
+      border: 1px solid rgba(245,196,0,.2);
+      font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px;
+    }
+    .empty-row td { text-align: center; color: var(--muted); padding: 40px; }
+
+    /* ── Comparar ──────────────────────────────────────── */
+    .comparar-setup { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 28px; }
+    .periodo-input-card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); padding: 22px; }
+    .periodo-input-card h3 { font-size: 12px; font-weight: 700; color: var(--muted-2); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 14px; }
+    .periodo-input-card h3 em { color: var(--gold); font-style: normal; }
+    .comparar-result { display: none; }
+    .comparar-result.show { display: block; }
+    .comparar-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .resultado-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; }
+    .resultado-card h3 { font-size: 15px; font-weight: 800; color: var(--white); padding-bottom: 12px; margin-bottom: 16px; border-bottom: 2px solid var(--gold); }
+    .comparar-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .comparar-row:last-child { border-bottom: none; }
+    .comparar-key { color: var(--muted-2); font-size: 12px; }
+    .comparar-val { font-weight: 700; color: var(--white); }
+    .delta-pill { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; margin-left: 6px; }
+    .delta-pill.pos { background: rgba(76,175,125,.15); color: var(--success); }
+    .delta-pill.neg { background: rgba(224,82,82,.15); color: var(--danger); }
+    .delta-pill.neu { background: var(--surface-2); color: var(--muted-2); }
+
+    /* ── Último Registro Strip ─────────────────────────── */
+    .last-reg-strip {
+      display: flex; align-items: center;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); margin-bottom: 24px; overflow: hidden;
+      animation: fadeInUp .4s ease .3s both;
+      transition: border-color var(--transition);
+    }
+    .last-reg-strip:hover { border-color: var(--border-g); }
+    .last-reg-item { flex: 1; display: flex; align-items: center; gap: 14px; padding: 16px 24px; }
+    .last-reg-icon { font-size: 22px; flex-shrink: 0; }
+    .last-reg-info { flex: 1; }
+    .last-reg-team { font-size: 10px; font-weight: 700; color: var(--muted-2); text-transform: uppercase; letter-spacing: .6px; }
+    .last-reg-period { font-size: 14px; font-weight: 800; color: var(--white); margin-top: 3px; }
+    .last-reg-time { text-align: right; flex-shrink: 0; }
+    .last-reg-label { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; }
+    .last-reg-val { font-size: 13px; font-weight: 700; color: var(--gold); margin-top: 2px; }
+    .last-reg-sep { width: 1px; height: 52px; background: var(--border); flex-shrink: 0; }
+    .last-reg-cta {
+      padding: 0 24px; min-height: 72px; display: flex; align-items: center;
+      background: linear-gradient(135deg, var(--gold), var(--gold-dk));
+      color: #1a1a1a; font-size: 13px; font-weight: 800;
+      text-decoration: none; white-space: nowrap; flex-shrink: 0;
+      transition: filter .2s; letter-spacing: .3px;
+    }
+    .last-reg-cta:hover { filter: brightness(1.08); }
+
+    /* ── Toast ─────────────────────────────────────────── */
+    #toast {
+      position: fixed; bottom: 28px; right: 28px;
+      padding: 14px 22px; border-radius: 12px;
+      font-size: 14px; font-weight: 600;
+      box-shadow: 0 8px 40px rgba(0,0,0,.6);
+      opacity: 0; transform: translateY(12px);
+      transition: opacity .25s, transform .25s;
+      pointer-events: none; z-index: 999; max-width: 340px;
+      border: 1px solid rgba(255,255,255,.08); backdrop-filter: blur(20px);
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+    #toast.ok  { background: rgba(25,25,25,.95); color: var(--gold); }
+    #toast.err { background: rgba(200,50,50,.95); color: #fff; }
+
+    /* ── Loading ───────────────────────────────────────── */
+    .loading-overlay {
+      display: none; position: absolute; inset: 0;
+      background: rgba(8,8,8,.7); backdrop-filter: blur(4px);
+      align-items: center; justify-content: center;
+      border-radius: var(--radius); z-index: 10;
+    }
+    .loading-overlay.show { display: flex; }
+    .spinner {
+      width: 28px; height: 28px;
+      border: 3px solid rgba(255,255,255,.1);
+      border-top-color: var(--gold);
+      border-radius: 50%; animation: spin .7s linear infinite;
+    }
+
+    /* ── Vazio ─────────────────────────────────────────── */
+    .empty-state { text-align: center; padding: 80px 32px; color: var(--muted); }
+    .empty-state .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: .35; }
+    .empty-state p { font-size: 14px; color: var(--muted-2); line-height: 1.7; }
+
+    /* ── Responsivo ────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .header { padding: 0 20px; }
+      .view { padding: 24px 20px 60px; }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .charts-grid { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: repeat(2, 1fr); }
+      .form-grid.cols-4 { grid-template-columns: repeat(2, 1fr); }
+      .comparar-setup, .comparar-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+      .kpi-grid { grid-template-columns: 1fr 1fr; }
+      .brand-sub { display: none; }
+      .nav-link { padding: 8px 12px; font-size: 12px; }
+      .brand-logo { height: 36px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════ HEADER -->
+<header class="header">
+  <a class="brand" href="/">
+    <img src="/assets/logo.png" class="brand-logo" alt="Oásis Centro de Treinamento"
+         onerror="this.style.display='none';document.getElementById('bfb').style.display='flex'">
+    <div id="bfb" class="brand-fallback" style="display:none">
+      <div class="brand-icon">O</div>
+      <div class="brand-text">
+        <span class="brand-name">OÁSIS</span>
+        <span class="brand-sub">Centro de Treinamento</span>
+      </div>
+    </div>
+  </a>
+  <nav class="nav" id="nav">
+    <span class="nav-link active" data-view="dashboard">Dashboard</span>
+    <a class="nav-link" href="/inserir.html">Inserir Dados</a>
+    <a class="nav-link" href="/historico.html">Histórico</a>
+    <a class="nav-link" href="/comparar.html">Comparar Períodos</a>
+  </nav>
+</header>
+
+<!-- ═══════════════════════════════════════════════ DASHBOARD -->
+<section class="view active" id="view-dashboard">
+  <div class="section-header">
+    <div>
+      <div class="section-title">Dashboard</div>
+      <div class="section-sub">Visão geral do desempenho da academia</div>
+    </div>
+    <div class="last-update" id="last-update" style="display:none">
+      Última entrada: <span id="last-update-text"></span>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-icon">🏋️</div>
+      <div class="kpi-label">Alunos Ativos</div>
+      <div class="kpi-value" id="kpi-ativos">—</div>
+      <div class="kpi-delta" id="kpi-ativos-delta"></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon">📊</div>
+      <div class="kpi-label">Leads na Semana</div>
+      <div class="kpi-value" id="kpi-leads">—</div>
+      <div class="kpi-delta" id="kpi-leads-delta"></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon">📋</div>
+      <div class="kpi-label">Total Encarteirados</div>
+      <div class="kpi-value" id="kpi-encar">—</div>
+      <div class="kpi-delta" id="kpi-encar-delta"></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon">🎯</div>
+      <div class="kpi-label">Conversão Experiência</div>
+      <div class="kpi-value" id="kpi-conv">—</div>
+      <div class="kpi-delta" id="kpi-conv-delta"></div>
+    </div>
+  </div>
+
+  <!-- Último registro por equipe -->
+  <div class="last-reg-strip" id="last-reg-strip" style="display:none">
+    <div class="last-reg-item">
+      <div class="last-reg-icon">📊</div>
+      <div class="last-reg-info">
+        <div class="last-reg-team">Equipe Comercial</div>
+        <div class="last-reg-period" id="last-c-period">—</div>
+      </div>
+      <div class="last-reg-time">
+        <div class="last-reg-label">Último registro</div>
+        <div class="last-reg-val" id="last-c-date">—</div>
+      </div>
+    </div>
+    <div class="last-reg-sep"></div>
+    <div class="last-reg-item">
+      <div class="last-reg-icon">🏋️</div>
+      <div class="last-reg-info">
+        <div class="last-reg-team">Equipe Técnica</div>
+        <div class="last-reg-period" id="last-t-period">—</div>
+      </div>
+      <div class="last-reg-time">
+        <div class="last-reg-label">Último registro</div>
+        <div class="last-reg-val" id="last-t-date">—</div>
+      </div>
+    </div>
+    <a href="/inserir.html" class="last-reg-cta">+ Inserir novo registro</a>
+  </div>
+
+  <!-- Empty state -->
+  <div id="dash-empty" class="empty-state" style="display:none">
+    <div class="empty-icon">📭</div>
+    <p>Nenhum dado registrado ainda.<br>
+    Use <strong>Inserir Dados</strong> para começar.</p>
+  </div>
+
+  <!-- Charts -->
+  <div class="charts-grid" id="dash-charts" style="display:none">
+    <!-- 1 -->
+    <div class="chart-card">
+      <div class="chart-title">Evolução de Alunos Ativos</div>
+      <div class="chart-sub">Últimas 8 semanas</div>
+      <div class="chart-wrap"><canvas id="chart-ativos"></canvas></div>
+    </div>
+    <!-- 2 -->
+    <div class="chart-card">
+      <div class="chart-title">Leads por Semana</div>
+      <div class="chart-sub">Captação nas últimas 8 semanas</div>
+      <div class="chart-wrap"><canvas id="chart-leads"></canvas></div>
+    </div>
+    <!-- 3 -->
+    <div class="chart-card">
+      <div class="chart-title">Distribuição de Planos</div>
+      <div class="chart-sub">Composição atual da base de alunos</div>
+      <div class="chart-wrap"><canvas id="chart-planos"></canvas></div>
+    </div>
+    <!-- 4 -->
+    <div class="chart-card">
+      <div class="chart-title">Encarteirados por Treinador</div>
+      <div class="chart-sub">Distribuição do portfólio — meta: 60% dos alunos ativos ÷ 7</div>
+      <div class="chart-wrap"><canvas id="chart-treinadores"></canvas></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ INSERIR DADOS -->
+<section class="view" id="view-inserir">
+  <div class="section-header">
+    <div>
+      <div class="section-title">Inserir Dados</div>
+      <div class="section-sub">Registre os indicadores semanais</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="comercial">Comercial</button>
+    <button class="tab-btn" data-tab="tecnico">Técnico</button>
+  </div>
+
+  <!-- Tab Comercial -->
+  <div class="tab-panel active" id="tab-comercial">
+    <form class="form-card" id="form-comercial" autocomplete="off">
+      <div class="form-section-title">Período <span class="required-badge">OBRIGATÓRIO</span></div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Semana (nº)</label>
+          <input type="number" name="semana" min="1" max="53" placeholder="Ex: 25" required />
+        </div>
+        <div class="field">
+          <label>Mês</label>
+          <select name="mes" required>
+            <option value="">Selecione</option>
+            <option>1</option><option>2</option><option>3</option><option>4</option>
+            <option>5</option><option>6</option><option>7</option><option>8</option>
+            <option>9</option><option>10</option><option>11</option><option>12</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Ano</label>
+          <input type="number" name="ano" min="2020" max="2099" placeholder="Ex: 2026" required />
+        </div>
+      </div>
+
+      <div class="form-section-title">Leads</div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Leads na Semana</label>
+          <input type="number" name="leads_semana" min="0" placeholder="0" />
+        </div>
+        <div class="field">
+          <label>Leads no Mês</label>
+          <input type="number" name="leads_mes" min="0" placeholder="0" />
+        </div>
+      </div>
+
+      <div class="form-section-title">Alunos por Plano</div>
+      <div class="form-grid cols-4">
+        <div class="field">
+          <label>Alunos Ativos</label>
+          <input type="number" name="alunos_ativos" min="0" placeholder="0" />
+        </div>
+        <div class="field">
+          <label>Plano Anual</label>
+          <input type="number" name="alunos_anual" min="0" placeholder="0" />
+        </div>
+        <div class="field">
+          <label>Mensal Recorrente</label>
+          <input type="number" name="alunos_mensal_recorrente" min="0" placeholder="0" />
+        </div>
+        <div class="field">
+          <label>Mensal Comum</label>
+          <input type="number" name="alunos_mensal_comum" min="0" placeholder="0" />
+        </div>
+      </div>
+
+      <div class="form-section-title">Movimentação</div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Alunos Natação</label>
+          <input type="number" name="alunos_natacao" min="0" placeholder="0" />
+        </div>
+        <div class="field">
+          <label>Saídas no Mês</label>
+          <input type="number" name="alunos_saidos_mes" min="0" placeholder="0" />
+        </div>
+        <div class="field">
+          <label>Novos na Semana</label>
+          <input type="number" name="alunos_novos_semana" min="0" placeholder="0" />
+        </div>
+        <div class="field">
+          <label>Novos no Mês</label>
+          <input type="number" name="alunos_novos_mes" min="0" placeholder="0" />
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-ghost" onclick="resetForm('form-comercial')">Limpar</button>
+        <button type="submit" class="btn btn-primary">Salvar Dados Comerciais</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Tab Técnico -->
+  <div class="tab-panel" id="tab-tecnico">
+    <form class="form-card" id="form-tecnico" autocomplete="off">
+      <div class="form-section-title">Período <span class="required-badge">OBRIGATÓRIO</span></div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Semana (nº)</label>
+          <input type="number" name="semana" min="1" max="53" placeholder="Ex: 25" required />
+        </div>
+        <div class="field">
+          <label>Mês</label>
+          <select name="mes" required>
+            <option value="">Selecione</option>
+            <option>1</option><option>2</option><option>3</option><option>4</option>
+            <option>5</option><option>6</option><option>7</option><option>8</option>
+            <option>9</option><option>10</option><option>11</option><option>12</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Ano</label>
+          <input type="number" name="ano" min="2020" max="2099" placeholder="Ex: 2026" required />
+        </div>
+      </div>
+
+      <div class="form-section-title">Treinos & Avaliações</div>
+      <div class="form-grid cols-4">
+        <div class="field">
+          <label>Revisões de Treinos</label>
+          <input type="number" name="revisoes_treinos" min="0" placeholder="0" />
+        </div>
+        <div class="field">
+          <label>Novas Avaliações</label>
+          <input type="number" name="novas_avaliacoes" min="0" placeholder="0" />
+        </div>
+        <div class="field">
+          <label>Treinos Vencidos</label>
+          <input type="number" name="treinos_vencidos" min="0" placeholder="0" />
+        </div>
+        <div class="field">
+          <label>Vencendo em 7 dias</label>
+          <input type="number" name="treinos_vencendo_7dias" min="0" placeholder="0" />
+        </div>
+      </div>
+
+      <div class="form-section-title">Experiência & Consultoria</div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Alunos na Experiência</label>
+          <input type="number" name="alunos_experiencia" min="0" placeholder="0" />
+        </div>
+        <div class="field">
+          <label>Fecharam da Experiência</label>
+          <input type="number" name="alunos_fecharam_experiencia" min="0" placeholder="0" />
+        </div>
+        <div class="field">
+          <label>Consultoria Física</label>
+          <input type="number" name="consultoria_fisica" min="0" placeholder="0" />
+        </div>
+      </div>
+
+      <div class="form-section-title">Encarteirados por Treinador</div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Total Encarteirados</label>
+          <input type="number" name="total_encarteirados" min="0" placeholder="0" />
+        </div>
+      </div>
+      <div class="form-grid cols-4" style="margin-top:12px">
+        <div class="field"><label>Diego</label><input type="number" name="encarteirados_diego" min="0" placeholder="0" /></div>
+        <div class="field"><label>Luiz</label><input type="number" name="encarteirados_luiz" min="0" placeholder="0" /></div>
+        <div class="field"><label>Vinícius</label><input type="number" name="encarteirados_vinicius" min="0" placeholder="0" /></div>
+        <div class="field"><label>Arthur</label><input type="number" name="encarteirados_arthur" min="0" placeholder="0" /></div>
+        <div class="field"><label>Caio</label><input type="number" name="encarteirados_caio" min="0" placeholder="0" /></div>
+        <div class="field"><label>Lucas</label><input type="number" name="encarteirados_lucas" min="0" placeholder="0" /></div>
+        <div class="field"><label>Michele</label><input type="number" name="encarteirados_michele" min="0" placeholder="0" /></div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-ghost" onclick="resetForm('form-tecnico')">Limpar</button>
+        <button type="submit" class="btn btn-primary">Salvar Dados Técnicos</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ HISTÓRICO -->
+<section class="view" id="view-historico">
+  <div class="section-header">
+    <div>
+      <div class="section-title">Histórico</div>
+      <div class="section-sub">Registros anteriores com filtros</div>
+    </div>
+    <button class="btn btn-primary" onclick="carregarHistorico()">Atualizar</button>
+  </div>
+
+  <div class="filter-bar">
+    <div class="field">
+      <label>Semana</label>
+      <input type="number" id="filt-semana" min="1" max="53" placeholder="Todas" />
+    </div>
+    <div class="field">
+      <label>Mês</label>
+      <select id="filt-mes">
+        <option value="">Todos</option>
+        <option value="1">Janeiro</option><option value="2">Fevereiro</option>
+        <option value="3">Março</option><option value="4">Abril</option>
+        <option value="5">Maio</option><option value="6">Junho</option>
+        <option value="7">Julho</option><option value="8">Agosto</option>
+        <option value="9">Setembro</option><option value="10">Outubro</option>
+        <option value="11">Novembro</option><option value="12">Dezembro</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Ano</label>
+      <input type="number" id="filt-ano" min="2020" max="2099" placeholder="Todos" />
+    </div>
+    <div class="field">
+      <label>Data início</label>
+      <input type="date" id="filt-inicio" />
+    </div>
+    <div class="field">
+      <label>Data fim</label>
+      <input type="date" id="filt-fim" />
+    </div>
+    <button class="btn btn-primary" onclick="carregarHistorico()">Filtrar</button>
+    <button class="btn btn-ghost" onclick="limparFiltros()">Limpar</button>
+  </div>
+
+  <div class="hist-tabs">
+    <button class="hist-tab active" data-htab="comercial">Comercial</button>
+    <button class="hist-tab" data-htab="tecnico">Técnico</button>
+  </div>
+
+  <div class="table-card">
+    <div class="table-scroll">
+      <!-- Tabela Comercial -->
+      <table id="hist-table-comercial">
+        <thead>
+          <tr>
+            <th>Semana</th>
+            <th>Mês</th>
+            <th>Ano</th>
+            <th style="text-align:right">Leads Sem.</th>
+            <th style="text-align:right">Leads Mês</th>
+            <th style="text-align:right">Ativos</th>
+            <th style="text-align:right">Anual</th>
+            <th style="text-align:right">Mensal Rec.</th>
+            <th style="text-align:right">Mensal Com.</th>
+            <th style="text-align:right">Natação</th>
+            <th style="text-align:right">Saídas</th>
+            <th style="text-align:right">Novos Sem.</th>
+            <th style="text-align:right">Novos Mês</th>
+            <th>Registrado em</th>
+          </tr>
+        </thead>
+        <tbody id="hist-tbody-comercial">
+          <tr class="empty-row"><td colspan="14">Carregando...</td></tr>
+        </tbody>
+      </table>
+      <!-- Tabela Técnico -->
+      <table id="hist-table-tecnico" style="display:none">
+        <thead>
+          <tr>
+            <th>Semana</th>
+            <th>Mês</th>
+            <th>Ano</th>
+            <th style="text-align:right">Revisões</th>
+            <th style="text-align:right">Avaliações</th>
+            <th style="text-align:right">Vencidos</th>
+            <th style="text-align:right">Vencendo 7d</th>
+            <th style="text-align:right">Experiência</th>
+            <th style="text-align:right">Fecharam</th>
+            <th style="text-align:right">Conv. (%)</th>
+            <th style="text-align:right">Total Encar.</th>
+            <th>Registrado em</th>
+          </tr>
+        </thead>
+        <tbody id="hist-tbody-tecnico">
+          <tr class="empty-row"><td colspan="12">Carregando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ COMPARAR PERÍODOS -->
+<section class="view" id="view-comparar">
+  <div class="section-header">
+    <div>
+      <div class="section-title">Comparar Períodos</div>
+      <div class="section-sub">Análise lado a lado de dois momentos</div>
+    </div>
+  </div>
+
+  <div class="comparar-setup">
+    <div class="periodo-input-card">
+      <h3>Período <em>A</em></h3>
+      <div class="form-grid">
+        <div class="field"><label>Semana</label><input type="number" id="p1-semana" min="1" max="53" placeholder="—" /></div>
+        <div class="field"><label>Mês</label>
+          <select id="p1-mes"><option value="">—</option>
+            <option value="1">Jan</option><option value="2">Fev</option><option value="3">Mar</option>
+            <option value="4">Abr</option><option value="5">Mai</option><option value="6">Jun</option>
+            <option value="7">Jul</option><option value="8">Ago</option><option value="9">Set</option>
+            <option value="10">Out</option><option value="11">Nov</option><option value="12">Dez</option>
+          </select>
+        </div>
+        <div class="field"><label>Ano</label><input type="number" id="p1-ano" min="2020" max="2099" placeholder="—" /></div>
+      </div>
+    </div>
+    <div class="periodo-input-card">
+      <h3>Período <em>B</em></h3>
+      <div class="form-grid">
+        <div class="field"><label>Semana</label><input type="number" id="p2-semana" min="1" max="53" placeholder="—" /></div>
+        <div class="field"><label>Mês</label>
+          <select id="p2-mes"><option value="">—</option>
+            <option value="1">Jan</option><option value="2">Fev</option><option value="3">Mar</option>
+            <option value="4">Abr</option><option value="5">Mai</option><option value="6">Jun</option>
+            <option value="7">Jul</option><option value="8">Ago</option><option value="9">Set</option>
+            <option value="10">Out</option><option value="11">Nov</option><option value="12">Dez</option>
+          </select>
+        </div>
+        <div class="field"><label>Ano</label><input type="number" id="p2-ano" min="2020" max="2099" placeholder="—" /></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;justify-content:center;margin-bottom:28px">
+    <button class="btn btn-primary" style="padding:12px 40px;font-size:15px" onclick="compararPeriodos()">Comparar</button>
+  </div>
+
+  <div class="comparar-result" id="comparar-result">
+    <div class="comparar-grid">
+      <div class="resultado-card" id="comparar-card-a">
+        <h3>Período A</h3>
+        <div id="comparar-body-a"></div>
+      </div>
+      <div class="resultado-card" id="comparar-card-b">
+        <h3>Período B</h3>
+        <div id="comparar-body-b"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ TOAST -->
+<div id="toast"></div>
+
+<!-- ═══════════════════════════════════════════════ SCRIPTS -->
+<script>
+/* ── Constantes ────────────────────────────────────────────────────── */
+const API       = '';
+const YELLOW    = '#F5C400';
+const GOLD_DK   = '#C9A217';
+const BLACK     = '#0a0a0a';
+const SURFACE   = '#141414';
+const TEXT      = '#e0e0dc';
+const MUTED     = '#888';
+const MESES     = ['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const TREINADORES = ['Diego','Luiz','Vinícius','Arthur','Caio','Lucas','Michele'];
+
+const chartInstances = {};
+
+/* ── Navegação ─────────────────────────────────────────────────────── */
+document.getElementById('nav').addEventListener('click', e => {
+  const link = e.target.closest('.nav-link');
+  if (!link) return;
+  navegar(link.dataset.view);
+});
+
+function navegar(view) {
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.toggle('active', l.dataset.view === view));
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === `view-${view}`));
+  if (view === 'dashboard') carregarDashboard();
+  if (view === 'historico') carregarHistorico();
+}
+
+/* ── Tabs (Inserir Dados) ──────────────────────────────────────────── */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+  });
+});
+
+/* ── Tabs (Histórico) ──────────────────────────────────────────────── */
+document.querySelectorAll('.hist-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.hist-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.htab;
+    document.getElementById('hist-table-comercial').style.display = tab === 'comercial' ? '' : 'none';
+    document.getElementById('hist-table-tecnico').style.display   = tab === 'tecnico'   ? '' : 'none';
+  });
+});
+
+/* ── Utilitários ───────────────────────────────────────────────────── */
+function fmt(v, decimals = 0) {
+  if (v == null) return '—';
+  return Number(v).toLocaleString('pt-BR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+}
+
+function labelSemana(d) {
+  return `S${d.semana} ${MESES[d.mes] || ''}`;
+}
+
+function criarGrafico(id, config) {
+  if (chartInstances[id]) chartInstances[id].destroy();
+  chartInstances[id] = new Chart(document.getElementById(id), config);
+}
+
+let toastTimer;
+function toast(msg, tipo = 'ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `show ${tipo}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.className = '', 3500);
+}
+
+function resetForm(id) {
+  document.getElementById(id).reset();
+}
+
+function valorOuZero(v) {
+  const n = parseInt(v, 10);
+  return isNaN(n) ? 0 : n;
+}
+
+/* ── Dashboard ─────────────────────────────────────────────────────── */
+async function carregarDashboard() {
+  try {
+    const res  = await fetch('/api/dashboard');
+    const data = await res.json();
+    const { recente, graficos } = data;
+    const c = recente.comercial || {};
+    const t = recente.tecnico   || {};
+    const semHist = graficos.comercial.length === 0 && graficos.tecnico.length === 0;
+
+    if (!recente.comercial && !recente.tecnico) {
+      document.getElementById('dash-empty').style.display    = 'block';
+      document.getElementById('dash-charts').style.display  = 'none';
+      document.getElementById('last-update').style.display  = 'none';
+      document.getElementById('last-reg-strip').style.display = 'none';
+      ['kpi-ativos','kpi-leads','kpi-encar','kpi-conv'].forEach(id => {
+        document.getElementById(id).textContent = '—';
+      });
+      return;
+    }
+
+    document.getElementById('dash-empty').style.display  = 'none';
+    document.getElementById('dash-charts').style.display = 'grid';
+
+    // Última atualização (strip por equipe)
+    const strip = document.getElementById('last-reg-strip');
+    strip.style.display = 'flex';
+
+    function preencherUltReg(prefId, rec) {
+      const MESES_FULL = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                          'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+      if (rec && rec.data_registro) {
+        const [dataPart, horaPart] = rec.data_registro.split(' ');
+        const [y, m, d] = dataPart.split('-');
+        document.getElementById(`last-${prefId}-period`).textContent =
+          `Semana ${rec.semana} · ${MESES_FULL[rec.mes]} de ${rec.ano}`;
+        document.getElementById(`last-${prefId}-date`).textContent =
+          `${d}/${m}/${y}${horaPart ? ' às ' + horaPart.substring(0,5) : ''}`;
+      } else {
+        document.getElementById(`last-${prefId}-period`).textContent = 'Nenhum registro';
+        document.getElementById(`last-${prefId}-date`).textContent = '—';
+      }
+    }
+    preencherUltReg('c', recente.comercial);
+    preencherUltReg('t', recente.tecnico);
+
+    // KPI cards
+    document.getElementById('kpi-ativos').textContent = fmt(c.alunos_ativos);
+    document.getElementById('kpi-leads').textContent  = fmt(c.leads_semana);
+    document.getElementById('kpi-encar').textContent  = fmt(t.total_encarteirados);
+    document.getElementById('kpi-conv').textContent   =
+      t.conversao_experiencia != null ? fmt(t.conversao_experiencia, 1) + '%' : '—';
+
+    // Deltas (penúltimo vs. último)
+    const prevC = graficos.comercial.length >= 2 ? graficos.comercial[graficos.comercial.length - 2] : null;
+    const prevT = graficos.tecnico.length   >= 2 ? graficos.tecnico[graficos.tecnico.length - 2]     : null;
+    setDelta('kpi-ativos-delta', c.alunos_ativos, prevC?.alunos_ativos, 'alunos');
+    setDelta('kpi-leads-delta',  c.leads_semana,  prevC?.leads_semana,  'leads');
+    setDelta('kpi-encar-delta',  t.total_encarteirados, prevT?.total_encarteirados, 'alunos');
+
+    // Gráficos
+    grafAtivos(graficos.comercial);
+    grafLeads(graficos.comercial);
+    grafPlanos(c);
+    grafTreinadores(t, c.alunos_ativos);
+
+  } catch (err) {
+    toast('Erro ao carregar dashboard.', 'err');
+    console.error(err);
+  }
+}
+
+function setDelta(id, atual, anterior, unidade = '') {
+  const el = document.getElementById(id);
+  if (!el || anterior == null || atual == null) { if(el) el.textContent=''; return; }
+  const diff = atual - anterior;
+  if (diff === 0) { el.textContent = 'Sem variação'; el.className = 'kpi-delta'; return; }
+  const sinal = diff > 0 ? '▲' : '▼';
+  el.textContent = `${sinal} ${Math.abs(diff)} vs semana anterior`;
+  el.className = `kpi-delta ${diff > 0 ? 'pos' : 'neg'}`;
+}
+
+/* ── Gráfico 1: Linha — alunos ativos ─────────────────────────────── */
+function grafAtivos(dados) {
+  criarGrafico('chart-ativos', {
+    type: 'line',
+    data: {
+      labels: dados.map(labelSemana),
+      datasets: [{
+        label: 'Alunos Ativos',
+        data: dados.map(d => d.alunos_ativos),
+        borderColor: YELLOW,
+        backgroundColor: 'rgba(245,196,0,0.10)',
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: SURFACE,
+        pointBorderColor: YELLOW,
+        pointBorderWidth: 2,
+        pointRadius: 5,
+        pointHoverRadius: 8,
+        pointHoverBackgroundColor: YELLOW,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1c1c1c',
+          titleColor: YELLOW,
+          bodyColor: TEXT,
+          borderColor: 'rgba(245,196,0,0.2)',
+          borderWidth: 1,
+          padding: 12, cornerRadius: 8,
+        }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: MUTED, font: { size: 11 } }, border: { color: 'rgba(255,255,255,0.06)' } },
+        y: {
+          beginAtZero: false,
+          grid: { color: 'rgba(255,255,255,0.06)' },
+          ticks: { color: MUTED, font: { size: 11 } },
+          border: { color: 'rgba(255,255,255,0.06)' }
+        }
+      }
+    }
+  });
+}
+
+/* ── Gráfico 2: Barras — leads por semana ─────────────────────────── */
+function grafLeads(dados) {
+  criarGrafico('chart-leads', {
+    type: 'bar',
+    data: {
+      labels: dados.map(labelSemana),
+      datasets: [{
+        label: 'Leads',
+        data: dados.map(d => d.leads_semana),
+        backgroundColor: 'rgba(245,196,0,0.85)',
+        hoverBackgroundColor: YELLOW,
+        borderRadius: 7,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1c1c1c', titleColor: YELLOW, bodyColor: TEXT,
+          borderColor: 'rgba(245,196,0,0.2)', borderWidth: 1,
+          padding: 12, cornerRadius: 8,
+        }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: MUTED, font: { size: 11 } }, border: { color: 'rgba(255,255,255,0.06)' } },
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(255,255,255,0.06)' },
+          ticks: { color: MUTED, font: { size: 11 } },
+          border: { color: 'rgba(255,255,255,0.06)' }
+        }
+      }
+    }
+  });
+}
+
+/* ── Gráfico 3: Rosca — distribuição de planos ────────────────────── */
+function grafPlanos(c) {
+  const anual   = c.alunos_anual             || 0;
+  const recorr  = c.alunos_mensal_recorrente || 0;
+  const comum   = c.alunos_mensal_comum      || 0;
+  const natacao = c.alunos_natacao           || 0;
+
+  criarGrafico('chart-planos', {
+    type: 'doughnut',
+    data: {
+      labels: ['Plano Anual', 'Mensal Recorrente', 'Mensal Comum', 'Natação'],
+      datasets: [{
+        data: [anual, recorr, comum, natacao],
+        backgroundColor: [YELLOW, '#2a2a2a', GOLD_DK, '#383838'],
+        borderColor: ['rgba(0,0,0,0.3)', 'rgba(255,255,255,0.1)', 'rgba(0,0,0,0.2)', 'rgba(255,255,255,0.08)'],
+        borderWidth: 3,
+        hoverOffset: 10,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '64%',
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { padding: 14, font: { size: 12 }, color: TEXT, usePointStyle: true, pointStyleWidth: 10 }
+        },
+        tooltip: {
+          backgroundColor: '#1c1c1c', titleColor: YELLOW, bodyColor: TEXT,
+          borderColor: 'rgba(245,196,0,0.2)', borderWidth: 1,
+          padding: 12, cornerRadius: 8,
+          callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed} alunos` }
+        }
+      }
+    }
+  });
+}
+
+/* ── Gráfico 4: Barras horizontais — encarteirados por treinador ──── */
+function grafTreinadores(t, alunosAtivos) {
+  const nomes  = TREINADORES;
+  const chaves = ['diego','luiz','vinicius','arthur','caio','lucas','michele'];
+  const vals   = chaves.map(k => t[`encarteirados_${k}`] || 0);
+  const meta   = alunosAtivos ? Math.round(alunosAtivos * 0.6 / 7) : 0;
+
+  // Porcentagem de cada treinador em relação ao total de alunos ativos
+  const pcts = alunosAtivos > 0
+    ? vals.map(v => ((v / alunosAtivos) * 100).toFixed(1))
+    : vals.map(() => null);
+
+  // Labels com % no eixo Y: "Diego (14,5%)"
+  const labels = nomes.map((n, i) =>
+    pcts[i] !== null ? `${n}  ${pcts[i]}%` : n
+  );
+
+  criarGrafico('chart-treinadores', {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Encarteirados',
+        data: vals,
+        backgroundColor: vals.map(v => v >= meta ? YELLOW : 'rgba(245,196,0,0.45)'),
+        hoverBackgroundColor: BLACK,
+        borderRadius: 5,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: BLACK, titleColor: YELLOW, bodyColor: '#fff',
+          padding: 12, cornerRadius: 8,
+          callbacks: {
+            title: ctx => nomes[ctx[0].dataIndex],
+            label: ctx => {
+              const v   = ctx.parsed.x;
+              const pct = pcts[ctx.dataIndex];
+              const pctTxt = pct !== null ? ` (${pct}% dos ativos)` : '';
+              return ` ${v} encarteirados${pctTxt}`;
+            },
+            afterLabel: ctx => {
+              const v = ctx.parsed.x;
+              if (!meta) return '';
+              return v >= meta ? ' ✓ Meta atingida' : ` ✗ Faltam ${meta - v} para a meta`;
+            }
+          }
+        },
+        annotation: meta > 0 ? {
+          annotations: {
+            metaLine: {
+              type: 'line',
+              xMin: meta, xMax: meta,
+              borderColor: '#d93025',
+              borderWidth: 2,
+              borderDash: [6, 4],
+              label: {
+                display: true,
+                content: `Meta: ${meta}`,
+                backgroundColor: '#d93025',
+                color: '#fff',
+                font: { size: 11, weight: 'bold' },
+                padding: { x: 8, y: 4 },
+                borderRadius: 4,
+              }
+            }
+          }
+        } : {}
+      },
+      scales: {
+        x: {
+          beginAtZero: true,
+          grid: { color: 'rgba(255,255,255,0.06)' },
+          ticks: { color: MUTED, font: { size: 11 } },
+          border: { color: 'rgba(255,255,255,0.06)' }
+        },
+        y: {
+          grid: { display: false },
+          ticks: { color: TEXT, font: { size: 12, weight: '600' } }
+        }
+      }
+    }
+  });
+
+  // Mini-tabela abaixo do gráfico com contagem + % por treinador
+  renderTabelaEncarteirados(t, alunosAtivos, vals, pcts, meta);
+}
+
+function renderTabelaEncarteirados(t, alunosAtivos, vals, pcts, meta) {
+  const containerId = 'enc-tabela-wrap';
+  let wrap = document.getElementById(containerId);
+  if (!wrap) {
+    // Cria o container logo abaixo do card do gráfico de treinadores
+    const chartCard = document.getElementById('chart-treinadores').closest('.chart-card');
+    wrap = document.createElement('div');
+    wrap.id = containerId;
+    chartCard.appendChild(wrap);
+  }
+
+  const chaves = ['diego','luiz','vinicius','arthur','caio','lucas','michele'];
+  const totalEnc = vals.reduce((a, v) => a + v, 0);
+  const totalPct = alunosAtivos > 0 ? ((totalEnc / alunosAtivos) * 100).toFixed(1) : null;
+
+  const linhas = TREINADORES.map((nome, i) => {
+    const v   = vals[i];
+    const pct = pcts[i];
+    const atingiu = meta > 0 ? v >= meta : null;
+    const barW  = alunosAtivos > 0 ? Math.min((v / alunosAtivos) * 100 * 5, 100) : 0;
+    const barColor = atingiu ? '#F5C400' : 'rgba(245,196,0,0.35)';
+    const status = atingiu === null ? '' : atingiu
+      ? '<span style="color:#1a7a40;font-weight:700;font-size:11px">✓</span>'
+      : '<span style="color:#c0392b;font-weight:700;font-size:11px">✗</span>';
+    return `
+      <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+        <td style="font-weight:600;padding:8px 10px;white-space:nowrap;color:#e0e0dc">${nome}</td>
+        <td style="text-align:right;font-weight:800;padding:8px 10px;font-size:15px;color:#f0f0ec">${v}</td>
+        <td style="text-align:right;padding:8px 10px;color:#888;font-size:12px;font-weight:600">
+          ${pct !== null ? pct + '%' : '—'}
+        </td>
+        <td style="padding:8px 10px;min-width:90px">
+          <div style="height:7px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden">
+            <div style="height:100%;width:${barW}%;background:${barColor};border-radius:4px;transition:width .5s ease"></div>
+          </div>
+        </td>
+        <td style="padding:8px 10px;text-align:center">${status}</td>
+      </tr>`;
+  }).join('');
+
+  wrap.innerHTML = `
+    <div style="margin-top:14px;border:1px solid rgba(255,255,255,0.07);border-radius:10px;overflow:hidden">
+      <table style="width:100%;border-collapse:collapse;font-family:inherit;font-size:13px">
+        <thead>
+          <tr style="background:rgba(255,255,255,0.04);border-bottom:1px solid rgba(255,255,255,0.07)">
+            <th style="text-align:left;padding:8px 10px;font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px">Treinador</th>
+            <th style="text-align:right;padding:8px 10px;font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px">Alunos</th>
+            <th style="text-align:right;padding:8px 10px;font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px">% dos Ativos</th>
+            <th style="padding:8px 10px;font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px">Proporção</th>
+            <th style="padding:8px 10px;font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;text-align:center">Meta</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${linhas}
+        </tbody>
+        <tfoot>
+          <tr style="background:rgba(245,196,0,0.08);border-top:1px solid rgba(245,196,0,0.2)">
+            <td style="font-weight:700;padding:9px 10px;color:#F5C400;font-size:12px;letter-spacing:.5px;text-transform:uppercase">TOTAL</td>
+            <td style="text-align:right;font-weight:900;padding:9px 10px;color:#F5C400;font-size:16px">${totalEnc}</td>
+            <td style="text-align:right;padding:9px 10px;color:#F5C400;font-size:12px;font-weight:700">${totalPct !== null ? totalPct + '%' : '—'}</td>
+            <td colspan="2" style="padding:9px 10px;color:rgba(255,255,255,.35);font-size:11px">
+              ${alunosAtivos ? `de ${alunosAtivos} alunos ativos` : ''}
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>`;
+}
+
+/* ── Formulários ───────────────────────────────────────────────────── */
+document.getElementById('form-comercial').addEventListener('submit', async e => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const body = Object.fromEntries([...fd.entries()].map(([k,v]) => [k, valorOuZero(v)]));
+  try {
+    const r = await fetch('/api/comercial', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.erro || 'Erro ao salvar');
+    toast(`✓ Dados comerciais salvos! (ID ${d.id})`, 'ok');
+    e.target.reset();
+  } catch(err) {
+    toast(err.message, 'err');
+  }
+});
+
+document.getElementById('form-tecnico').addEventListener('submit', async e => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const body = Object.fromEntries([...fd.entries()].map(([k,v]) => [k, valorOuZero(v)]));
+  try {
+    const r = await fetch('/api/tecnico', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.erro || 'Erro ao salvar');
+    toast(`✓ Dados técnicos salvos! (ID ${d.id})`, 'ok');
+    e.target.reset();
+  } catch(err) {
+    toast(err.message, 'err');
+  }
+});
+
+/* ── Histórico ─────────────────────────────────────────────────────── */
+async function carregarHistorico() {
+  const params = new URLSearchParams();
+  const s = document.getElementById('filt-semana').value;
+  const m = document.getElementById('filt-mes').value;
+  const a = document.getElementById('filt-ano').value;
+  const i = document.getElementById('filt-inicio').value;
+  const f = document.getElementById('filt-fim').value;
+  if (s) params.set('semana', s);
+  if (m) params.set('mes', m);
+  if (a) params.set('ano', a);
+  if (i) params.set('data_inicio', i);
+  if (f) params.set('data_fim', f);
+
+  const tbody_c = document.getElementById('hist-tbody-comercial');
+  const tbody_t = document.getElementById('hist-tbody-tecnico');
+  tbody_c.innerHTML = `<tr class="empty-row"><td colspan="14">Carregando...</td></tr>`;
+  tbody_t.innerHTML = `<tr class="empty-row"><td colspan="12">Carregando...</td></tr>`;
+
+  try {
+    const res  = await fetch(`/api/historico?${params}`);
+    const data = await res.json();
+
+    // Comercial
+    if (!data.comercial.length) {
+      tbody_c.innerHTML = `<tr class="empty-row"><td colspan="14">Nenhum registro encontrado.</td></tr>`;
+    } else {
+      tbody_c.innerHTML = data.comercial.map(r => `
+        <tr>
+          <td><span class="badge-semana">S${r.semana}</span></td>
+          <td>${MESES[r.mes] || r.mes}</td>
+          <td>${r.ano}</td>
+          <td class="num">${fmt(r.leads_semana)}</td>
+          <td class="num">${fmt(r.leads_mes)}</td>
+          <td class="num"><strong>${fmt(r.alunos_ativos)}</strong></td>
+          <td class="num">${fmt(r.alunos_anual)}</td>
+          <td class="num">${fmt(r.alunos_mensal_recorrente)}</td>
+          <td class="num">${fmt(r.alunos_mensal_comum)}</td>
+          <td class="num">${fmt(r.alunos_natacao)}</td>
+          <td class="num">${fmt(r.alunos_saidos_mes)}</td>
+          <td class="num">${fmt(r.alunos_novos_semana)}</td>
+          <td class="num">${fmt(r.alunos_novos_mes)}</td>
+          <td style="color:var(--muted);font-size:12px">${(r.data_registro||'').substring(0,16)}</td>
+        </tr>`).join('');
+    }
+
+    // Técnico
+    if (!data.tecnico.length) {
+      tbody_t.innerHTML = `<tr class="empty-row"><td colspan="12">Nenhum registro encontrado.</td></tr>`;
+    } else {
+      tbody_t.innerHTML = data.tecnico.map(r => `
+        <tr>
+          <td><span class="badge-semana">S${r.semana}</span></td>
+          <td>${MESES[r.mes] || r.mes}</td>
+          <td>${r.ano}</td>
+          <td class="num">${fmt(r.revisoes_treinos)}</td>
+          <td class="num">${fmt(r.novas_avaliacoes)}</td>
+          <td class="num">${fmt(r.treinos_vencidos)}</td>
+          <td class="num">${fmt(r.treinos_vencendo_7dias)}</td>
+          <td class="num">${fmt(r.alunos_experiencia)}</td>
+          <td class="num">${fmt(r.alunos_fecharam_experiencia)}</td>
+          <td class="num"><strong>${fmt(r.conversao_experiencia,1)}%</strong></td>
+          <td class="num"><strong>${fmt(r.total_encarteirados)}</strong></td>
+          <td style="color:var(--muted);font-size:12px">${(r.data_registro||'').substring(0,16)}</td>
+        </tr>`).join('');
+    }
+  } catch(err) {
+    toast('Erro ao carregar histórico.', 'err');
+  }
+}
+
+function limparFiltros() {
+  ['filt-semana','filt-ano','filt-inicio','filt-fim'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('filt-mes').value = '';
+  carregarHistorico();
+}
+
+/* ── Comparar Períodos ─────────────────────────────────────────────── */
+async function compararPeriodos() {
+  const p = {
+    semana1: document.getElementById('p1-semana').value,
+    mes1:    document.getElementById('p1-mes').value,
+    ano1:    document.getElementById('p1-ano').value,
+    semana2: document.getElementById('p2-semana').value,
+    mes2:    document.getElementById('p2-mes').value,
+    ano2:    document.getElementById('p2-ano').value,
+  };
+
+  if (!p.semana1 && !p.mes1 && !p.ano1) { toast('Preencha ao menos um campo do Período A.','err'); return; }
+  if (!p.semana2 && !p.mes2 && !p.ano2) { toast('Preencha ao menos um campo do Período B.','err'); return; }
+
+  try {
+    const params = new URLSearchParams(Object.entries(p).filter(([,v])=>v));
+    const res  = await fetch(`/api/comparar?${params}`);
+    const data = await res.json();
+    if (data.erro) throw new Error(data.erro);
+
+    renderComparar('a', data.periodo1, 'Período A', data.periodo1.filtro);
+    renderComparar('b', data.periodo2, 'Período B', data.periodo2.filtro);
+    document.getElementById('comparar-result').classList.add('show');
+  } catch(err) {
+    toast(err.message || 'Erro ao comparar.', 'err');
+  }
+}
+
+function renderComparar(lado, periodo, titulo, filtro) {
+  const c = periodo.comercial || {};
+  const t = periodo.tecnico   || {};
+  const semLabel = filtro.semana
+    ? `S${filtro.semana} · ${MESES[filtro.mes]||''} ${filtro.ano||''}`
+    : `${MESES[filtro.mes]||''} ${filtro.ano||''}`.trim();
+
+  document.getElementById(`comparar-card-${lado}`).querySelector('h3').textContent =
+    `${titulo} — ${semLabel || 'Sem filtro'}`;
+
+  const campos = [
+    ['Alunos Ativos',        c.alunos_ativos,             null, false],
+    ['Leads na Semana',      c.leads_semana,              null, false],
+    ['Leads no Mês',         c.leads_mes,                 null, false],
+    ['Novos no Mês',         c.alunos_novos_mes,          null, false],
+    ['Saídas no Mês',        c.alunos_saidos_mes,         null, true],
+    ['Plano Anual',          c.alunos_anual,              null, false],
+    ['Mensal Recorrente',    c.alunos_mensal_recorrente,  null, false],
+    ['Mensal Comum',         c.alunos_mensal_comum,       null, false],
+    ['Total Encarteirados',  t.total_encarteirados,       null, false],
+    ['Conversão Exp. (%)',   t.conversao_experiencia,     1,    false],
+    ['Revisões Treinos',     t.revisoes_treinos,          null, false],
+    ['Novas Avaliações',     t.novas_avaliacoes,          null, false],
+    ['Treinos Vencidos',     t.treinos_vencidos,          null, true],
+  ];
+
+  document.getElementById(`comparar-body-${lado}`).innerHTML = campos.map(([label, val, dec]) => `
+    <div class="comparar-row">
+      <span class="comparar-key">${label}</span>
+      <span class="comparar-val">${val != null ? fmt(val, dec||0) : '—'}</span>
+    </div>`).join('');
+}
+
+/* ── Init ──────────────────────────────────────────────────────────── */
+carregarDashboard();
+</script>
+</body>
+</html>

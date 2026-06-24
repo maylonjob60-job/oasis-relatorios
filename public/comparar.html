@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Comparar Períodos — Oásis</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --black:    #0a0a0a;
+      --yellow:   #F5C400;
+      --gold-dk:  #C9A217;
+      --offwhite: #1c1c1c;
+      --white:    #141414;
+      --border:   rgba(255,255,255,0.07);
+      --muted:    #888;
+      --text:     #e0e0dc;
+      --green:    #4caf7d;
+      --red:      #e05252;
+      --green-bg: rgba(76,175,125,0.12);
+      --red-bg:   rgba(224,82,82,0.12);
+      --radius:   14px;
+      --shadow:   0 8px 40px rgba(0,0,0,0.55);
+      --tr:       .15s ease;
+    }
+    body { font-family: 'Segoe UI', Inter, system-ui, sans-serif; background: #0a0a0a; color: #e0e0dc; min-height: 100vh; }
+
+    /* ── Header ── */
+    .header {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--black); display: flex; align-items: center;
+      justify-content: space-between; padding: 0 40px; height: 68px;
+      border-bottom: 3px solid var(--yellow);
+    }
+    .brand { display: flex; align-items: center; gap: 14px; text-decoration: none; }
+    .brand-icon { width: 40px; height: 40px; background: var(--yellow); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; color: var(--black); }
+    .brand-name { font-size: 18px; font-weight: 800; color: var(--yellow); }
+    .brand-sub  { font-size: 11px; color: rgba(255,255,255,.5); }
+    .nav { display: flex; gap: 4px; }
+    .nav-link { color: rgba(255,255,255,.65); font-size: 13.5px; font-weight: 500; padding: 8px 18px; border-radius: 8px; text-decoration: none; transition: background var(--tr), color var(--tr); }
+    .nav-link:hover  { color: #fff; background: rgba(255,255,255,.08); }
+    .nav-link.active { color: var(--black); background: var(--yellow); font-weight: 700; }
+
+    /* ── Layout ── */
+    .container { max-width: 1060px; margin: 0 auto; padding: 32px 24px 80px; }
+    .page-header { margin-bottom: 28px; }
+    .page-title { font-size: 22px; font-weight: 800; }
+    .page-sub   { font-size: 13px; color: var(--muted); margin-top: 3px; }
+
+    /* ── Mode toggle ── */
+    .mode-toggle {
+      display: inline-flex; background: var(--offwhite); border-radius: 10px;
+      padding: 4px; gap: 2px; margin-bottom: 24px;
+    }
+    .mode-btn {
+      padding: 9px 22px; border-radius: 8px; border: none; cursor: pointer;
+      font-size: 13px; font-weight: 600; font-family: inherit;
+      background: none; color: var(--muted); transition: background var(--tr), color var(--tr);
+    }
+    .mode-btn.active { background: var(--black); color: var(--yellow); }
+
+    /* ── Seletor de período ── */
+    .selectors-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 20px; align-items: start; margin-bottom: 24px; }
+    .selector-card {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
+    }
+    .selector-head {
+      padding: 14px 20px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .selector-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+    .selector-dot.p1 { background: var(--yellow); }
+    .selector-dot.p2 { background: var(--black); }
+    .selector-head-title { font-size: 14px; font-weight: 700; }
+    .selector-body { padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; }
+    .sel-row { display: flex; gap: 10px; }
+    .sel-field { display: flex; flex-direction: column; gap: 5px; flex: 1; }
+    .sel-field label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; }
+    .sel-field input, .sel-field select {
+      background: var(--offwhite); border: 1.5px solid var(--border);
+      border-radius: 8px; padding: 9px 11px; font-size: 14px;
+      font-family: inherit; color: var(--black); outline: none;
+      transition: border-color var(--tr); -moz-appearance: textfield;
+    }
+    .sel-field input::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .sel-field input:focus, .sel-field select:focus { border-color: var(--yellow); background: #fff; }
+    .sel-field select option { background: #fff; }
+
+    .vs-divider {
+      display: flex; align-items: center; justify-content: center;
+      padding-top: 40px;
+    }
+    .vs-badge {
+      background: var(--black); color: var(--yellow);
+      font-size: 13px; font-weight: 900; width: 44px; height: 44px;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    }
+
+    .compare-btn-row { display: flex; justify-content: center; gap: 12px; margin-bottom: 32px; }
+    .btn { padding: 11px 28px; border-radius: 9px; border: none; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; transition: background var(--tr), transform .1s; }
+    .btn:active { transform: scale(.98); }
+    .btn-primary { background: var(--black); color: #fff; }
+    .btn-primary:hover { background: #333; }
+    .btn-yellow  { background: var(--yellow); color: var(--black); }
+    .btn-yellow:hover { background: #d9ac00; }
+    .btn-ghost   { background: none; color: var(--muted); border: 1.5px solid var(--border); }
+    .btn-ghost:hover { border-color: var(--black); color: var(--black); }
+    .btn-sm { padding: 7px 14px; font-size: 12px; border-radius: 7px; }
+
+    /* ── Resultado ── */
+    #resultado { display: none; }
+
+    .result-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
+    }
+    .result-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+    .pill {
+      padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 700;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .pill-p1 { background: var(--yellow); color: var(--black); }
+    .pill-p2 { background: var(--black); color: var(--yellow); }
+    .pill-vs { background: var(--offwhite); color: var(--muted); font-weight: 500; }
+
+    /* ── Tabela de comparação ── */
+    .cmp-section-title {
+      font-size: 11px; font-weight: 700; color: var(--white);
+      text-transform: uppercase; letter-spacing: .6px;
+      background: var(--black); padding: 10px 20px;
+      border-radius: 10px 10px 0 0;
+    }
+    .cmp-table { width: 100%; border-collapse: collapse; background: var(--white); box-shadow: var(--shadow); border-radius: 0 0 var(--radius) var(--radius); overflow: hidden; margin-bottom: 24px; }
+    .cmp-table th {
+      background: #f0f0ee; font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .5px; color: var(--muted); padding: 11px 16px; text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    .cmp-table th.right { text-align: right; }
+    .cmp-table th.center { text-align: center; }
+    .cmp-table td { padding: 11px 16px; font-size: 14px; border-bottom: 1px solid var(--border); }
+    .cmp-table tr:last-child td { border-bottom: none; }
+    .cmp-table tr:nth-child(even) td { background: var(--offwhite); }
+    .cmp-table tr:nth-child(odd) td { background: var(--white); }
+    .cmp-table .td-label { font-weight: 600; color: var(--black); }
+    .cmp-table .td-val  { text-align: right; font-weight: 700; color: var(--black); font-size: 15px; }
+    .cmp-table .td-delta { text-align: center; }
+
+    .delta-up   { color: var(--green); font-weight: 800; font-size: 13px; }
+    .delta-down { color: var(--red);   font-weight: 800; font-size: 13px; }
+    .delta-same { color: var(--muted); font-weight: 600; font-size: 13px; }
+    .delta-na   { color: #ccc; font-size: 13px; }
+    .delta-pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 700;
+    }
+    .delta-pill.up   { background: var(--green-bg); color: var(--green); }
+    .delta-pill.down { background: var(--red-bg);   color: var(--red); }
+    .delta-pill.same { background: var(--offwhite); color: var(--muted); }
+
+    /* Célula P1 / P2 com ponto colorido */
+    .val-p1::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--yellow); margin-right: 6px; vertical-align: middle; }
+    .val-p2::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--black); margin-right: 6px; vertical-align: middle; }
+
+    /* ── Resumo placar ── */
+    .placar-card {
+      background: var(--black); border-radius: var(--radius);
+      padding: 20px 28px; display: flex; align-items: center;
+      justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 16px;
+    }
+    .placar-item { text-align: center; }
+    .placar-val { font-size: 32px; font-weight: 900; color: var(--yellow); }
+    .placar-lbl { font-size: 11px; color: rgba(255,255,255,.5); margin-top: 2px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
+    .placar-sep { width: 1px; height: 48px; background: rgba(255,255,255,.12); }
+    .placar-winner { font-size: 13px; color: rgba(255,255,255,.7); }
+    .placar-winner strong { color: var(--yellow); font-size: 15px; }
+
+    /* Modo anual */
+    .anual-info { background: rgba(245,196,0,.1); border: 1px solid rgba(245,196,0,.3); border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; font-size: 13px; color: #7a6200; }
+
+    /* ── Loading / empty ── */
+    .loading { text-align: center; padding: 48px; color: var(--muted); font-size: 14px; }
+    .spinner { display: inline-block; width: 28px; height: 28px; border: 3px solid var(--border); border-top-color: var(--yellow); border-radius: 50%; animation: spin .7s linear infinite; margin-bottom: 12px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Toast ── */
+    #toast { position: fixed; bottom: 28px; right: 28px; padding: 13px 20px; border-radius: 10px; font-size: 14px; font-weight: 600; box-shadow: 0 8px 32px rgba(0,0,0,.18); opacity: 0; transform: translateY(10px); transition: opacity .25s, transform .25s; pointer-events: none; z-index: 999; }
+    #toast.show { opacity: 1; transform: translateY(0); }
+    #toast.ok  { background: var(--black); color: var(--yellow); }
+    #toast.err { background: #c0392b; color: #fff; }
+
+    @media (max-width: 800px) {
+      .header { padding: 0 16px; }
+      .container { padding: 16px 12px 60px; }
+      .selectors-grid { grid-template-columns: 1fr; }
+      .vs-divider { padding: 0; }
+      .brand-logo { height: 36px; }
+    }
+
+    /* ── Header premium ────────────────────────────────── */
+    .header {
+      background: rgba(8,8,8,0.94) !important;
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-bottom: 1px solid rgba(245,196,0,0.2) !important;
+      box-shadow: 0 1px 0 rgba(245,196,0,0.12), 0 4px 24px rgba(0,0,0,0.6);
+      height: 108px;
+    }
+    .brand-logo { height: 92px; width: auto; object-fit: contain; display: block; }
+    .brand-fallback { display: flex; align-items: center; gap: 12px; }
+    .nav-link.active { box-shadow: 0 4px 14px rgba(245,196,0,0.3); }
+    .nav-link { border: 1px solid transparent; }
+    .nav-link:hover { border-color: rgba(255,255,255,0.07); }
+
+    /* ── Dark text fixes ───────────────────────────────── */
+    .page-title { color: #e0e0dc; }
+    .page-sub   { color: #888; }
+    .sel-field input, .sel-field select { color: #e0e0dc; }
+    .sel-field select option { background: #1c1c1c; color: #e0e0dc; }
+    .sel-field input:focus, .sel-field select:focus { background: #1c1c1c; }
+    .selector-head-title { color: #e0e0dc; }
+    .cmp-table th { background: rgba(255,255,255,0.04); }
+    .cmp-table .td-label { color: #e0e0dc; }
+    .cmp-table .td-val   { color: #f0f0ec; }
+    .cmp-table th.right, .cmp-table th.center { color: #888; }
+    .val-p2::before { background: #e0e0dc; }
+    .btn-primary { background: #1c1c1c; color: #e0e0dc; border: 1px solid rgba(255,255,255,0.1); }
+    .btn-primary:hover { background: #2a2a2a; }
+    .btn-ghost:hover { border-color: rgba(255,255,255,.2); color: #e0e0dc; }
+    .anual-info { color: #C9A217; background: rgba(245,196,0,0.08); border-color: rgba(245,196,0,0.2); }
+    .mode-toggle { background: #1c1c1c; }
+    .mode-btn.active { background: var(--yellow); color: #1a1a1a; }
+    #toast { backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,.08); }
+    #toast.ok { background: rgba(20,20,20,.95); }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <a class="brand" href="/">
+    <img src="/assets/logo.png" class="brand-logo" alt="Oásis Centro de Treinamento"
+         onerror="this.style.display='none';document.getElementById('bfb').style.display='flex'">
+    <div id="bfb" class="brand-fallback" style="display:none">
+      <div style="width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;color:#1a1a1a;flex-shrink:0;background:linear-gradient(135deg,#F5C400,#C9A217);border-radius:12px">O</div>
+      <div style="display:flex;flex-direction:column;line-height:1.2">
+        <span class="brand-name">OÁSIS</span>
+        <span class="brand-sub">Centro de Treinamento</span>
+      </div>
+    </div>
+  </a>
+  <nav class="nav">
+    <a class="nav-link" href="/">Dashboard</a>
+    <a class="nav-link" href="/inserir.html">Inserir Dados</a>
+    <a class="nav-link" href="/historico.html">Histórico</a>
+    <span class="nav-link active">Comparar Períodos</span>
+  </nav>
+</header>
+
+<div class="container">
+
+  <div class="page-header">
+    <div class="page-title">Comparar Períodos</div>
+    <div class="page-sub">Analise dois períodos lado a lado com variação por indicador</div>
+  </div>
+
+  <!-- Mode toggle -->
+  <div class="mode-toggle">
+    <button class="mode-btn active" id="mode-semanal" onclick="setMode('semanal')">📅 Semanal / Mensal</button>
+    <button class="mode-btn" id="mode-anual"   onclick="setMode('anual')">📆 Comparação Anual</button>
+  </div>
+
+  <!-- ── MODO SEMANAL ── -->
+  <div id="painel-semanal">
+    <div class="selectors-grid">
+      <!-- Período 1 -->
+      <div class="selector-card">
+        <div class="selector-head">
+          <div class="selector-dot p1"></div>
+          <div class="selector-head-title">Período 1</div>
+        </div>
+        <div class="selector-body">
+          <div class="sel-row">
+            <div class="sel-field">
+              <label>Semana</label>
+              <input id="p1-sem" type="number" min="1" max="53" placeholder="Ex: 24" />
+            </div>
+            <div class="sel-field">
+              <label>Mês</label>
+              <select id="p1-mes">
+                <option value="">—</option>
+                <option value="1">Janeiro</option><option value="2">Fevereiro</option>
+                <option value="3">Março</option><option value="4">Abril</option>
+                <option value="5">Maio</option><option value="6">Junho</option>
+                <option value="7">Julho</option><option value="8">Agosto</option>
+                <option value="9">Setembro</option><option value="10">Outubro</option>
+                <option value="11">Novembro</option><option value="12">Dezembro</option>
+              </select>
+            </div>
+            <div class="sel-field">
+              <label>Ano</label>
+              <input id="p1-ano" type="number" min="2020" max="2099" placeholder="2026" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="vs-divider"><div class="vs-badge">VS</div></div>
+
+      <!-- Período 2 -->
+      <div class="selector-card">
+        <div class="selector-head">
+          <div class="selector-dot p2"></div>
+          <div class="selector-head-title">Período 2</div>
+        </div>
+        <div class="selector-body">
+          <div class="sel-row">
+            <div class="sel-field">
+              <label>Semana</label>
+              <input id="p2-sem" type="number" min="1" max="53" placeholder="Ex: 25" />
+            </div>
+            <div class="sel-field">
+              <label>Mês</label>
+              <select id="p2-mes">
+                <option value="">—</option>
+                <option value="1">Janeiro</option><option value="2">Fevereiro</option>
+                <option value="3">Março</option><option value="4">Abril</option>
+                <option value="5">Maio</option><option value="6">Junho</option>
+                <option value="7">Julho</option><option value="8">Agosto</option>
+                <option value="9">Setembro</option><option value="10">Outubro</option>
+                <option value="11">Novembro</option><option value="12">Dezembro</option>
+              </select>
+            </div>
+            <div class="sel-field">
+              <label>Ano</label>
+              <input id="p2-ano" type="number" min="2020" max="2099" placeholder="2026" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODO ANUAL ── -->
+  <div id="painel-anual" style="display:none">
+    <div class="anual-info">
+      ℹ️ O modo anual calcula a <strong>média</strong> de todos os registros de cada ano e compara os dois anos entre si.
+    </div>
+    <div class="selectors-grid">
+      <div class="selector-card">
+        <div class="selector-head">
+          <div class="selector-dot p1"></div>
+          <div class="selector-head-title">Ano 1</div>
+        </div>
+        <div class="selector-body">
+          <div class="sel-field">
+            <label>Ano</label>
+            <input id="a1-ano" type="number" min="2020" max="2099" placeholder="2025" />
+          </div>
+        </div>
+      </div>
+
+      <div class="vs-divider"><div class="vs-badge">VS</div></div>
+
+      <div class="selector-card">
+        <div class="selector-head">
+          <div class="selector-dot p2"></div>
+          <div class="selector-head-title">Ano 2</div>
+        </div>
+        <div class="selector-body">
+          <div class="sel-field">
+            <label>Ano</label>
+            <input id="a2-ano" type="number" min="2020" max="2099" placeholder="2026" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="compare-btn-row">
+    <button class="btn btn-primary" id="btn-comparar" onclick="executarComparacao()">
+      ⚡ Comparar
+    </button>
+    <button class="btn btn-ghost" onclick="limpar()">Limpar</button>
+  </div>
+
+  <!-- RESULTADO -->
+  <div id="resultado"></div>
+
+</div><!-- /container -->
+
+<div id="toast"></div>
+
+<script>
+const MESES = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+               'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+let modoAtual = 'semanal';
+
+/* ── Mode toggle ──────────────────────────────────────── */
+function setMode(m) {
+  modoAtual = m;
+  document.getElementById('painel-semanal').style.display = m === 'semanal' ? '' : 'none';
+  document.getElementById('painel-anual').style.display   = m === 'anual'   ? '' : 'none';
+  document.getElementById('mode-semanal').classList.toggle('active', m === 'semanal');
+  document.getElementById('mode-anual').classList.toggle('active',   m === 'anual');
+  document.getElementById('resultado').style.display = 'none';
+}
+
+function limpar() {
+  ['p1-sem','p1-ano','p2-sem','p2-ano','a1-ano','a2-ano'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  ['p1-mes','p2-mes'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('resultado').style.display = 'none';
+}
+
+/* ── Comparação semanal ───────────────────────────────── */
+async function executarComparacao() {
+  if (modoAtual === 'anual') { await compararAnual(); return; }
+
+  const p1 = {
+    semana: document.getElementById('p1-sem').value,
+    mes:    document.getElementById('p1-mes').value,
+    ano:    document.getElementById('p1-ano').value,
+  };
+  const p2 = {
+    semana: document.getElementById('p2-sem').value,
+    mes:    document.getElementById('p2-mes').value,
+    ano:    document.getElementById('p2-ano').value,
+  };
+
+  if ((!p1.semana && !p1.mes && !p1.ano) || (!p2.semana && !p2.mes && !p2.ano)) {
+    toast('Preencha ao menos um campo em cada período.', 'err'); return;
+  }
+
+  const res = document.getElementById('resultado');
+  res.style.display = 'block';
+  res.innerHTML = '<div class="loading"><div class="spinner"></div><br>Buscando dados…</div>';
+
+  const params = new URLSearchParams();
+  if (p1.semana) params.set('semana1', p1.semana);
+  if (p1.mes)    params.set('mes1',    p1.mes);
+  if (p1.ano)    params.set('ano1',    p1.ano);
+  if (p2.semana) params.set('semana2', p2.semana);
+  if (p2.mes)    params.set('mes2',    p2.mes);
+  if (p2.ano)    params.set('ano2',    p2.ano);
+
+  try {
+    const r = await fetch(`/api/comparar?${params}`);
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.erro || 'Erro na busca');
+
+    const c1 = d.periodo1.comercial, t1 = d.periodo1.tecnico;
+    const c2 = d.periodo2.comercial, t2 = d.periodo2.tecnico;
+
+    const labelP1 = formatarLabel(p1.semana, p1.mes, p1.ano, c1 || t1);
+    const labelP2 = formatarLabel(p2.semana, p2.mes, p2.ano, c2 || t2);
+
+    res.innerHTML = renderResultado(c1, t1, c2, t2, labelP1, labelP2, false);
+  } catch (err) {
+    res.innerHTML = `<div class="loading" style="color:#c0392b">${err.message}</div>`;
+  }
+}
+
+/* ── Comparação anual ─────────────────────────────────── */
+async function compararAnual() {
+  const a1 = document.getElementById('a1-ano').value;
+  const a2 = document.getElementById('a2-ano').value;
+  if (!a1 || !a2) { toast('Preencha os dois anos.', 'err'); return; }
+
+  const res = document.getElementById('resultado');
+  res.style.display = 'block';
+  res.innerHTML = '<div class="loading"><div class="spinner"></div><br>Calculando médias anuais…</div>';
+
+  try {
+    const [r1, r2] = await Promise.all([
+      fetch(`/api/historico?ano=${a1}`).then(r => r.json()),
+      fetch(`/api/historico?ano=${a2}`).then(r => r.json()),
+    ]);
+
+    const c1 = mediaComercial(r1.comercial);
+    const t1 = mediaTecnico(r1.tecnico);
+    const c2 = mediaComercial(r2.comercial);
+    const t2 = mediaTecnico(r2.tecnico);
+
+    const n1 = Math.max(r1.comercial.length, r1.tecnico.length);
+    const n2 = Math.max(r2.comercial.length, r2.tecnico.length);
+
+    res.innerHTML = renderResultado(
+      c1, t1, c2, t2,
+      `${a1} (média de ${n1} semana${n1 !== 1 ? 's' : ''})`,
+      `${a2} (média de ${n2} semana${n2 !== 1 ? 's' : ''})`,
+      true
+    );
+  } catch (err) {
+    res.innerHTML = `<div class="loading" style="color:#c0392b">${err.message}</div>`;
+  }
+}
+
+function formatarLabel(semana, mes, ano, rec) {
+  const s = semana || rec?.semana || '';
+  const m = mes    || rec?.mes    || '';
+  const a = ano    || rec?.ano    || '';
+  const parts = [];
+  if (s) parts.push(`S${s}`);
+  if (m) parts.push(MESES[m] || m);
+  if (a) parts.push(a);
+  return parts.join(' · ') || '—';
+}
+
+/* ── Médias anuais ────────────────────────────────────── */
+function mediaComercial(rows) {
+  if (!rows.length) return null;
+  const n = rows.length;
+  const sum = f => rows.reduce((a, r) => a + (r[f] || 0), 0);
+  return {
+    leads_semana:             +(sum('leads_semana') / n).toFixed(1),
+    leads_mes:                +(sum('leads_mes') / n).toFixed(1),
+    alunos_ativos:            +(sum('alunos_ativos') / n).toFixed(1),
+    alunos_anual:             +(sum('alunos_anual') / n).toFixed(1),
+    alunos_mensal_recorrente: +(sum('alunos_mensal_recorrente') / n).toFixed(1),
+    alunos_mensal_comum:      +(sum('alunos_mensal_comum') / n).toFixed(1),
+    alunos_natacao:           +(sum('alunos_natacao') / n).toFixed(1),
+    alunos_novos_semana:      +(sum('alunos_novos_semana') / n).toFixed(1),
+    alunos_novos_mes:         +(sum('alunos_novos_mes') / n).toFixed(1),
+    alunos_saidos_mes:        +(sum('alunos_saidos_mes') / n).toFixed(1),
+    _media: true,
+  };
+}
+
+function mediaTecnico(rows) {
+  if (!rows.length) return null;
+  const n = rows.length;
+  const sum = f => rows.reduce((a, r) => a + (r[f] || 0), 0);
+  return {
+    revisoes_treinos:            +(sum('revisoes_treinos') / n).toFixed(1),
+    novas_avaliacoes:            +(sum('novas_avaliacoes') / n).toFixed(1),
+    treinos_vencidos:            +(sum('treinos_vencidos') / n).toFixed(1),
+    treinos_vencendo_7dias:      +(sum('treinos_vencendo_7dias') / n).toFixed(1),
+    alunos_experiencia:          +(sum('alunos_experiencia') / n).toFixed(1),
+    alunos_fecharam_experiencia: +(sum('alunos_fecharam_experiencia') / n).toFixed(1),
+    conversao_experiencia:       +(sum('conversao_experiencia') / n).toFixed(1),
+    consultoria_fisica:          +(sum('consultoria_fisica') / n).toFixed(1),
+    total_encarteirados:         +(sum('total_encarteirados') / n).toFixed(1),
+    encarteirados_diego:         +(sum('encarteirados_diego') / n).toFixed(1),
+    encarteirados_luiz:          +(sum('encarteirados_luiz') / n).toFixed(1),
+    encarteirados_vinicius:      +(sum('encarteirados_vinicius') / n).toFixed(1),
+    encarteirados_arthur:        +(sum('encarteirados_arthur') / n).toFixed(1),
+    encarteirados_caio:          +(sum('encarteirados_caio') / n).toFixed(1),
+    encarteirados_lucas:         +(sum('encarteirados_lucas') / n).toFixed(1),
+    encarteirados_michele:       +(sum('encarteirados_michele') / n).toFixed(1),
+    _media: true,
+  };
+}
+
+/* ── Render resultado ─────────────────────────────────── */
+function renderResultado(c1, t1, c2, t2, label1, label2, isAnual) {
+  if (!c1 && !t1 && !c2 && !t2) {
+    return '<div class="loading" style="color:var(--muted)">Nenhum dado encontrado para os períodos selecionados.</div>';
+  }
+
+  // Conta melhorias/pioras para o placar
+  let melhorias = 0, pioras = 0, iguais = 0;
+  const METRICAS_C = definirMetricasC(c1, c2);
+  const METRICAS_T = definirMetricasT(t1, t2);
+  [...METRICAS_C, ...METRICAS_T].forEach(m => {
+    const tipo = tipoDelta(m.v1, m.v2, m.better);
+    if (tipo === 'up') melhorias++;
+    else if (tipo === 'down') pioras++;
+    else if (tipo === 'same') iguais++;
+  });
+
+  const placarHtml = `
+    <div class="placar-card">
+      <div class="placar-item">
+        <div class="placar-val">${melhorias}</div>
+        <div class="placar-lbl">🟢 Melhoras</div>
+      </div>
+      <div class="placar-sep"></div>
+      <div class="placar-item">
+        <div class="placar-val">${pioras}</div>
+        <div class="placar-lbl">🔴 Pioras</div>
+      </div>
+      <div class="placar-sep"></div>
+      <div class="placar-item">
+        <div class="placar-val">${iguais}</div>
+        <div class="placar-lbl">⚪ Iguais</div>
+      </div>
+      <div class="placar-sep"></div>
+      <div class="placar-winner">
+        ${melhorias > pioras
+          ? `<strong>${label2}</strong> está ${melhorias - pioras} indicador${melhorias - pioras !== 1 ? 'es' : ''} melhor`
+          : melhorias < pioras
+            ? `<strong>${label1}</strong> estava ${pioras - melhorias} indicador${pioras - melhorias !== 1 ? 'es' : ''} melhor`
+            : 'Desempenho <strong>equilibrado</strong> entre os períodos'}
+      </div>
+    </div>`;
+
+  const pillsHtml = `
+    <div class="result-header">
+      <div class="result-pills">
+        <span class="pill pill-p1">${label1}</span>
+        <span class="pill pill-vs">vs</span>
+        <span class="pill pill-p2">${label2}</span>
+        ${isAnual ? '<span class="pill pill-vs">• Médias anuais</span>' : ''}
+      </div>
+    </div>`;
+
+  const tabelaC = c1 || c2
+    ? tabelaSection('EQUIPE COMERCIAL', METRICAS_C, label1, label2)
+    : '';
+  const tabelaT = t1 || t2
+    ? tabelaSection('EQUIPE TÉCNICA', METRICAS_T, label1, label2)
+    : '';
+
+  return pillsHtml + placarHtml + tabelaC + tabelaT;
+}
+
+function definirMetricasC(c1, c2) {
+  const v1 = f => c1 ? c1[f] : null;
+  const v2 = f => c2 ? c2[f] : null;
+  return [
+    { label: 'Leads na Semana',       v1: v1('leads_semana'),             v2: v2('leads_semana'),             better: 'high' },
+    { label: 'Leads no Mês',          v1: v1('leads_mes'),                v2: v2('leads_mes'),                better: 'high' },
+    { label: 'Alunos Ativos',         v1: v1('alunos_ativos'),            v2: v2('alunos_ativos'),            better: 'high' },
+    { label: 'Plano Anual',           v1: v1('alunos_anual'),             v2: v2('alunos_anual'),             better: 'high' },
+    { label: 'Mensal Recorrente',     v1: v1('alunos_mensal_recorrente'), v2: v2('alunos_mensal_recorrente'), better: 'high' },
+    { label: 'Mensal Comum',          v1: v1('alunos_mensal_comum'),      v2: v2('alunos_mensal_comum'),      better: 'high' },
+    { label: 'Natação',               v1: v1('alunos_natacao'),           v2: v2('alunos_natacao'),           better: 'high' },
+    { label: 'Novos na Semana',       v1: v1('alunos_novos_semana'),      v2: v2('alunos_novos_semana'),      better: 'high' },
+    { label: 'Novos no Mês',          v1: v1('alunos_novos_mes'),         v2: v2('alunos_novos_mes'),         better: 'high' },
+    { label: 'Saídas no Mês',         v1: v1('alunos_saidos_mes'),        v2: v2('alunos_saidos_mes'),        better: 'low'  },
+  ];
+}
+
+function definirMetricasT(t1, t2) {
+  const v1 = f => t1 ? t1[f] : null;
+  const v2 = f => t2 ? t2[f] : null;
+  return [
+    { label: 'Revisões de Treinos',     v1: v1('revisoes_treinos'),            v2: v2('revisoes_treinos'),            better: 'high' },
+    { label: 'Novas Avaliações',        v1: v1('novas_avaliacoes'),            v2: v2('novas_avaliacoes'),            better: 'high' },
+    { label: 'Treinos Vencidos',        v1: v1('treinos_vencidos'),            v2: v2('treinos_vencidos'),            better: 'low'  },
+    { label: 'Vencendo em 7 dias',      v1: v1('treinos_vencendo_7dias'),      v2: v2('treinos_vencendo_7dias'),      better: 'low'  },
+    { label: 'Alunos em Experiência',   v1: v1('alunos_experiencia'),          v2: v2('alunos_experiencia'),          better: 'high' },
+    { label: 'Fecharam Experiência',    v1: v1('alunos_fecharam_experiencia'), v2: v2('alunos_fecharam_experiencia'), better: 'high' },
+    { label: 'Conversão Experiência %', v1: v1('conversao_experiencia'),       v2: v2('conversao_experiencia'),       better: 'high' },
+    { label: 'Consultoria Física',      v1: v1('consultoria_fisica'),          v2: v2('consultoria_fisica'),          better: 'high' },
+    { label: 'Total Encarteirados',     v1: v1('total_encarteirados'),         v2: v2('total_encarteirados'),         better: 'high' },
+    { label: '↳ Diego',                 v1: v1('encarteirados_diego'),         v2: v2('encarteirados_diego'),         better: 'high' },
+    { label: '↳ Luiz',                  v1: v1('encarteirados_luiz'),          v2: v2('encarteirados_luiz'),          better: 'high' },
+    { label: '↳ Vinícius',              v1: v1('encarteirados_vinicius'),      v2: v2('encarteirados_vinicius'),      better: 'high' },
+    { label: '↳ Arthur',                v1: v1('encarteirados_arthur'),        v2: v2('encarteirados_arthur'),        better: 'high' },
+    { label: '↳ Caio',                  v1: v1('encarteirados_caio'),          v2: v2('encarteirados_caio'),          better: 'high' },
+    { label: '↳ Lucas',                 v1: v1('encarteirados_lucas'),         v2: v2('encarteirados_lucas'),         better: 'high' },
+    { label: '↳ Michele',               v1: v1('encarteirados_michele'),       v2: v2('encarteirados_michele'),       better: 'high' },
+  ];
+}
+
+function tipoDelta(v1, v2, better) {
+  if (v1 == null || v2 == null) return 'na';
+  const n1 = Number(v1), n2 = Number(v2);
+  if (isNaN(n1) || isNaN(n2)) return 'na';
+  if (n1 === n2) return 'same';
+  const numericBetter = better === 'high' ? n2 > n1 : n2 < n1;
+  return numericBetter ? 'up' : 'down';
+}
+
+function formatVal(v) {
+  if (v == null) return '<span style="color:#ccc">—</span>';
+  const n = Number(v);
+  if (isNaN(n)) return String(v);
+  return n % 1 === 0 ? String(n) : n.toFixed(1);
+}
+
+function tabelaSection(titulo, metricas, label1, label2) {
+  const rows = metricas.map(m => {
+    const tipo = tipoDelta(m.v1, m.v2, m.better);
+    const diff = (m.v1 != null && m.v2 != null)
+      ? (Number(m.v2) - Number(m.v1))
+      : null;
+
+    let deltaHtml;
+    if (tipo === 'na') {
+      deltaHtml = '<span class="delta-na">—</span>';
+    } else if (tipo === 'same') {
+      deltaHtml = '<span class="delta-pill same">→ 0</span>';
+    } else {
+      const seta = tipo === 'up' ? '▲' : '▼';
+      const d    = diff !== null ? (diff > 0 ? `+${diff % 1 === 0 ? diff : diff.toFixed(1)}` : `${diff % 1 === 0 ? diff : diff.toFixed(1)}`) : '';
+      deltaHtml  = `<span class="delta-pill ${tipo}">${seta} ${d}</span>`;
+    }
+
+    const isIndented = m.label.startsWith('↳');
+    const labelStyle = isIndented ? 'style="padding-left:28px;color:var(--muted);font-weight:500"' : '';
+
+    return `
+      <tr>
+        <td class="td-label" ${labelStyle}>${m.label}</td>
+        <td class="td-val"><span class="val-p1">${formatVal(m.v1)}</span></td>
+        <td class="td-val"><span class="val-p2">${formatVal(m.v2)}</span></td>
+        <td class="td-delta">${deltaHtml}</td>
+      </tr>`;
+  }).join('');
+
+  return `
+    <div class="cmp-section-title">${titulo}</div>
+    <table class="cmp-table">
+      <thead>
+        <tr>
+          <th>Indicador</th>
+          <th class="right">${label1}</th>
+          <th class="right">${label2}</th>
+          <th class="center">Variação</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+/* ── Toast ────────────────────────────────────────────── */
+let toastTimer;
+function toast(msg, tipo = 'ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = `show ${tipo}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.className = '', 4000);
+}
+
+/* ── Init ─────────────────────────────────────────────── */
+const anoAtual = new Date().getFullYear();
+document.getElementById('p1-ano').value = anoAtual;
+document.getElementById('p2-ano').value = anoAtual;
+document.getElementById('a1-ano').value = anoAtual - 1;
+document.getElementById('a2-ano').value = anoAtual;
+</script>
+</body>
+</html>

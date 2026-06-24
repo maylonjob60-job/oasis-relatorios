@@ -1,0 +1,5 @@
+node_modules/
+.env
+pdfs/
+db/oasis.db
+*.db

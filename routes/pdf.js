@@ -6,7 +6,7 @@ const { supabase } = require('../db/database');
 const MESES    = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho',
                   'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const TRAINERS = [
-  { key: 'diego',    nome: 'Diego'    },
+  { key: 'diego',    nome: 'Betão'    },
   { key: 'luiz',     nome: 'Luiz'     },
   { key: 'vinicius', nome: 'Vinícius' },
   { key: 'arthur',   nome: 'Arthur'   },
@@ -190,8 +190,9 @@ router.post('/gerar-pdf', async (req, res) => {
         ['Leads na Semana',      c.leads_semana,              'Leads no Mês (acumulado)',   c.leads_mes],
         ['Alunos Ativos',        c.alunos_ativos,             'Alunos Novos na Semana',     c.alunos_novos_semana],
         ['Alunos Novos no Mês',  c.alunos_novos_mes,          'Saídas no Mês',              c.alunos_saidos_mes],
-        ['Plano Anual',          c.alunos_anual,              'Mensal Recorrente',           c.alunos_mensal_recorrente],
-        ['Mensal Comum',         c.alunos_mensal_comum,       'Natação',                    c.alunos_natacao],
+        ['Plano Anual',          c.alunos_anual,              'Plano Semestral',             c.alunos_semestral],
+        ['Mensal Recorrente',    c.alunos_mensal_recorrente,  'Mensal Comum',               c.alunos_mensal_comum],
+        ['Natação',              c.alunos_natacao,            'Alunos Bloqueados',           c.alunos_bloqueados],
       ]);
       doc.moveDown(1.2);
     }

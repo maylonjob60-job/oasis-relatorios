@@ -592,6 +592,10 @@
           <input type="number" name="alunos_anual" min="0" placeholder="0" />
         </div>
         <div class="field">
+          <label>Plano Semestral</label>
+          <input type="number" name="alunos_semestral" min="0" placeholder="0" />
+        </div>
+        <div class="field">
           <label>Mensal Recorrente</label>
           <input type="number" name="alunos_mensal_recorrente" min="0" placeholder="0" />
         </div>
@@ -887,7 +891,7 @@ const SURFACE   = '#141414';
 const TEXT      = '#e0e0dc';
 const MUTED     = '#888';
 const MESES     = ['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-const TREINADORES = ['Diego','Luiz','Vinícius','Arthur','Caio','Lucas','Michele'];
+const TREINADORES = ['Betão','Luiz','Vinícius','Arthur','Caio','Lucas','Michele'];
 
 const chartInstances = {};
 
@@ -1401,6 +1405,7 @@ async function carregarHistorico() {
           <td class="num">${fmt(r.leads_mes)}</td>
           <td class="num"><strong>${fmt(r.alunos_ativos)}</strong></td>
           <td class="num">${fmt(r.alunos_anual)}</td>
+          <td class="num">${fmt(r.alunos_semestral)}</td>
           <td class="num">${fmt(r.alunos_mensal_recorrente)}</td>
           <td class="num">${fmt(r.alunos_mensal_comum)}</td>
           <td class="num">${fmt(r.alunos_natacao)}</td>
@@ -1489,8 +1494,10 @@ function renderComparar(lado, periodo, titulo, filtro) {
     ['Novos no Mês',         c.alunos_novos_mes,          null, false],
     ['Saídas no Mês',        c.alunos_saidos_mes,         null, true],
     ['Plano Anual',          c.alunos_anual,              null, false],
+    ['Plano Semestral',      c.alunos_semestral,          null, false],
     ['Mensal Recorrente',    c.alunos_mensal_recorrente,  null, false],
     ['Mensal Comum',         c.alunos_mensal_comum,       null, false],
+    ['Alunos Bloqueados',    c.alunos_bloqueados,         null, true],
     ['Total Encarteirados',  t.total_encarteirados,       null, false],
     ['Conversão Exp. (%)',   t.conversao_experiencia,     1,    false],
     ['Revisões Treinos',     t.revisoes_treinos,          null, false],

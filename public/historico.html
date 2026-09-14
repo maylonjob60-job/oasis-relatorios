@@ -544,9 +544,11 @@ function colComercial(c) {
         ${mr('Leads no Mês',       c.leads_mes)}
         ${mr('Alunos Ativos',      c.alunos_ativos)}
         ${mr('Plano Anual',        c.alunos_anual)}
+        ${mr('Plano Semestral',    c.alunos_semestral)}
         ${mr('Mensal Recorrente',  c.alunos_mensal_recorrente)}
         ${mr('Mensal Comum',       c.alunos_mensal_comum)}
         ${mr('Natação',            c.alunos_natacao)}
+        ${mr('Alunos Bloqueados',  c.alunos_bloqueados)}
         ${mr('Novos na Semana',    c.alunos_novos_semana)}
         ${mr('Novos no Mês',       c.alunos_novos_mes)}
         ${mr('Saídas no Mês',      c.alunos_saidos_mes)}
@@ -558,7 +560,7 @@ function colTecnico(t, alunosAtivos) {
   if (!t) return `<div><div class="modal-section-title">Equipe Técnica</div><div class="modal-empty">Dados técnicos não inseridos neste período.</div></div>`;
   const conv = t.conversao_experiencia != null ? `${Number(t.conversao_experiencia).toFixed(1)}%` : '—';
   const treinadores = [
-    ['Diego',    t.encarteirados_diego],
+    ['Betão',    t.encarteirados_diego],
     ['Luiz',     t.encarteirados_luiz],
     ['Vinícius', t.encarteirados_vinicius],
     ['Arthur',   t.encarteirados_arthur],

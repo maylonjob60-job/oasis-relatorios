@@ -20,8 +20,9 @@ router.post('/comercial', async (req, res) => {
 
   const fields = [
     'leads_semana', 'leads_mes', 'alunos_ativos', 'alunos_anual',
-    'alunos_mensal_recorrente', 'alunos_mensal_comum', 'alunos_natacao',
-    'alunos_saidos_mes', 'alunos_novos_semana', 'alunos_novos_mes',
+    'alunos_semestral', 'alunos_mensal_recorrente', 'alunos_mensal_comum',
+    'alunos_natacao', 'alunos_saidos_mes', 'alunos_novos_semana',
+    'alunos_novos_mes', 'alunos_bloqueados',
   ];
   const row = { semana: int(semana), mes: int(mes), ano: int(ano) };
   fields.forEach(f => { row[f] = int(req.body[f]) ?? 0; });

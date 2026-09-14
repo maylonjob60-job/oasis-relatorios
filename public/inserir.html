@@ -509,12 +509,20 @@
             <input id="c-alunos-anual" type="number" min="0" placeholder="0" />
           </div>
           <div class="field">
+            <label>Plano Semestral</label>
+            <input id="c-alunos-semestral" type="number" min="0" placeholder="0" />
+          </div>
+          <div class="field">
             <label>Mensal Recorrente</label>
             <input id="c-alunos-rec" type="number" min="0" placeholder="0" />
           </div>
           <div class="field">
             <label>Mensal Comum</label>
             <input id="c-alunos-com" type="number" min="0" placeholder="0" />
+          </div>
+          <div class="field">
+            <label>Alunos Bloqueados</label>
+            <input id="c-alunos-bloqueados" type="number" min="0" placeholder="0" />
           </div>
         </div>
       </div>
@@ -643,7 +651,7 @@
 
         <div class="treinadores-grid">
           <div class="treinador-field">
-            <label>Diego</label>
+            <label>Betão</label>
             <input id="t-enc-diego" type="number" min="0" placeholder="0" oninput="calcTotalEnc()" />
           </div>
           <div class="treinador-field">
@@ -882,12 +890,14 @@ async function salvarComercial() {
     leads_mes:                intVal('c-leads-mes'),
     alunos_ativos:            intVal('c-alunos-ativos'),
     alunos_anual:             intVal('c-alunos-anual'),
+    alunos_semestral:         intVal('c-alunos-semestral'),
     alunos_mensal_recorrente: intVal('c-alunos-rec'),
     alunos_mensal_comum:      intVal('c-alunos-com'),
     alunos_natacao:           intVal('c-alunos-nat'),
     alunos_saidos_mes:        intVal('c-saidos'),
     alunos_novos_semana:      intVal('c-novos-sem'),
     alunos_novos_mes:         intVal('c-novos-mes'),
+    alunos_bloqueados:        intVal('c-alunos-bloqueados'),
   };
 
   try {

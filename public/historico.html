@@ -629,13 +629,15 @@ async function gerarPdf(key) {
 
   const tipo = (p.comercial && p.tecnico) ? 'completo'
              : p.comercial ? 'comercial' : 'tecnico';
-  const registro_id = p.comercial?.id ?? p.tecnico?.id;
+  const rec = p.comercial || p.tecnico;
+  const mes = rec.mes;
+  const ano = rec.ano;
 
   toast('⬇ Gerando PDF…', 'ok');
   try {
     const r = await fetch('/api/gerar-pdf', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tipo, registro_id }),
+      body: JSON.stringify({ tipo, mes, ano }),
     });
     if (!r.ok) {
       const d = await r.json();

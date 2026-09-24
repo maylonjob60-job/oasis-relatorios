@@ -993,12 +993,7 @@ async function gerarPdf(tipo) {
     if (!savedTId) return;
   }
 
-  /*
-   * Chama POST /api/gerar-pdf com um registro_id principal:
-   *   - completo/comercial → usa savedCId (o endpoint busca o técnico pelo período)
-   *   - tecnico            → usa savedTId
-   */
-  const registro_id = tipo === 'tecnico' ? savedTId : savedCId;
+  const { mes, ano } = getPeriodo();
 
   toast('⬇ Gerando PDF…', 'ok');
 
@@ -1006,7 +1001,7 @@ async function gerarPdf(tipo) {
     const r = await fetch('/api/gerar-pdf', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tipo, registro_id }),
+      body: JSON.stringify({ tipo, mes, ano }),
     });
     if (!r.ok) {
       const d = await r.json();

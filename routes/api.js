@@ -14,7 +14,7 @@ function safeDate(v) {
 // ── POST /api/comercial ───────────────────────────────────────────────────────
 
 router.post('/comercial', async (req, res) => {
-  const { semana, mes, ano } = req.body;
+  const { semana, mes, ano, overwrite } = req.body;
   if (!int(semana) || !int(mes) || !int(ano))
     return res.status(400).json({ erro: 'semana, mes e ano são obrigatórios e devem ser números.' });
 
@@ -27,6 +27,17 @@ router.post('/comercial', async (req, res) => {
   const row = { semana: int(semana), mes: int(mes), ano: int(ano) };
   fields.forEach(f => { row[f] = int(req.body[f]) ?? 0; });
 
+  const { data: existing } = await supabase.from('comercial')
+    .select('id, data_registro').eq('semana', int(semana)).eq('mes', int(mes)).eq('ano', int(ano)).maybeSingle();
+
+  if (existing) {
+    if (!overwrite)
+      return res.status(409).json({ conflito: true, tabela: 'comercial', id: existing.id, data_registro: existing.data_registro });
+    const { data, error } = await supabase.from('comercial').update(row).eq('id', existing.id).select('id').single();
+    if (error) return res.status(500).json({ erro: error.message });
+    return res.status(200).json({ id: data.id, atualizado: true });
+  }
+
   const { data, error } = await supabase.from('comercial').insert([row]).select('id').single();
   if (error) return res.status(500).json({ erro: error.message });
   res.status(201).json({ id: data.id });
@@ -35,7 +46,7 @@ router.post('/comercial', async (req, res) => {
 // ── POST /api/tecnico ─────────────────────────────────────────────────────────
 
 router.post('/tecnico', async (req, res) => {
-  const { semana, mes, ano } = req.body;
+  const { semana, mes, ano, overwrite } = req.body;
   if (!int(semana) || !int(mes) || !int(ano))
     return res.status(400).json({ erro: 'semana, mes e ano são obrigatórios e devem ser números.' });
 
@@ -48,6 +59,17 @@ router.post('/tecnico', async (req, res) => {
   ];
   const row = { semana: int(semana), mes: int(mes), ano: int(ano) };
   fields.forEach(f => { row[f] = int(req.body[f]) ?? 0; });
+
+  const { data: existing } = await supabase.from('tecnico')
+    .select('id, data_registro').eq('semana', int(semana)).eq('mes', int(mes)).eq('ano', int(ano)).maybeSingle();
+
+  if (existing) {
+    if (!overwrite)
+      return res.status(409).json({ conflito: true, tabela: 'tecnico', id: existing.id, data_registro: existing.data_registro });
+    const { data, error } = await supabase.from('tecnico').update(row).eq('id', existing.id).select('id').single();
+    if (error) return res.status(500).json({ erro: error.message });
+    return res.status(200).json({ id: data.id, atualizado: true });
+  }
 
   const { data, error } = await supabase.from('tecnico').insert([row]).select('id').single();
   if (error) return res.status(500).json({ erro: error.message });

@@ -876,8 +876,34 @@ function limpar(tab) {
   }
 }
 
+/* ── Modal de Confirmação de Sobreposição ─────────────── */
+function confirmarSobreposicao(tabela, semana, mes, ano) {
+  return new Promise(resolve => {
+    const MESES_N = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                     'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    const label = tabela === 'comercial' ? 'Comercial' : 'Técnico';
+    $('conf-texto').innerHTML =
+      `Já existe um registro da <strong>Equipe ${label}</strong> para a
+       <strong>Semana ${semana}</strong> de <strong>${MESES_N[mes] || mes}/${ano}</strong>.<br><br>
+       Deseja <strong>sobrepor</strong> os dados existentes?`;
+    const overlay = $('conf-overlay');
+    overlay.classList.add('open');
+
+    function fechar(resultado) {
+      overlay.classList.remove('open');
+      $('conf-btn-sim').removeEventListener('click', onSim);
+      $('conf-btn-nao').removeEventListener('click', onNao);
+      resolve(resultado);
+    }
+    function onSim() { fechar(true); }
+    function onNao() { fechar(false); }
+    $('conf-btn-sim').addEventListener('click', onSim);
+    $('conf-btn-nao').addEventListener('click', onNao);
+  });
+}
+
 /* ── Salvar Comercial ─────────────────────────────────── */
-async function salvarComercial() {
+async function salvarComercial(overwrite = false) {
   const { semana, mes, ano } = getPeriodo();
   if (!semana || !mes || !ano) {
     toast('Preencha Semana, Mês e Ano antes de salvar.', 'err'); return;
@@ -885,7 +911,7 @@ async function salvarComercial() {
   await calcLeadsMes();
 
   const body = {
-    semana, mes, ano,
+    semana, mes, ano, overwrite,
     leads_semana:             intVal('c-leads-semana'),
     leads_mes:                intVal('c-leads-mes'),
     alunos_ativos:            intVal('c-alunos-ativos'),
@@ -906,17 +932,22 @@ async function salvarComercial() {
       body: JSON.stringify(body),
     });
     const d = await r.json();
+    if (r.status === 409 && d.conflito) {
+      const ok = await confirmarSobreposicao('comercial', semana, mes, ano);
+      if (ok) await salvarComercial(true);
+      return;
+    }
     if (!r.ok) throw new Error(d.erro || 'Erro ao salvar');
     savedCId = d.id;
     updateStatus();
-    toast(`✓ Dados comerciais salvos! (ID ${d.id})`, 'ok');
+    toast(d.atualizado ? `✓ Dados comerciais atualizados! (ID ${d.id})` : `✓ Dados comerciais salvos! (ID ${d.id})`, 'ok');
   } catch(err) {
     toast(err.message, 'err');
   }
 }
 
 /* ── Salvar Técnico ───────────────────────────────────── */
-async function salvarTecnico() {
+async function salvarTecnico(overwrite = false) {
   const { semana, mes, ano } = getPeriodo();
   if (!semana || !mes || !ano) {
     toast('Preencha Semana, Mês e Ano antes de salvar.', 'err'); return;
@@ -925,7 +956,7 @@ async function salvarTecnico() {
   calcTotalEnc();
 
   const body = {
-    semana, mes, ano,
+    semana, mes, ano, overwrite,
     revisoes_treinos:            intVal('t-revisoes'),
     novas_avaliacoes:            intVal('t-avaliacoes'),
     treinos_vencidos:            intVal('t-vencidos'),
@@ -949,10 +980,15 @@ async function salvarTecnico() {
       body: JSON.stringify(body),
     });
     const d = await r.json();
+    if (r.status === 409 && d.conflito) {
+      const ok = await confirmarSobreposicao('tecnico', semana, mes, ano);
+      if (ok) await salvarTecnico(true);
+      return;
+    }
     if (!r.ok) throw new Error(d.erro || 'Erro ao salvar');
     savedTId = d.id;
     updateStatus();
-    toast(`✓ Dados técnicos salvos! (ID ${d.id})`, 'ok');
+    toast(d.atualizado ? `✓ Dados técnicos atualizados! (ID ${d.id})` : `✓ Dados técnicos salvos! (ID ${d.id})`, 'ok');
   } catch(err) {
     toast(err.message, 'err');
   }
@@ -1039,6 +1075,38 @@ $('periodo-mes').value = new Date().getMonth() + 1;
 
 // Calcula leads do mês com os valores iniciais
 calcLeadsMes();
+</script>
+
+<!-- Modal de confirmação de sobreposição -->
+<div id="conf-overlay" style="
+  display:none; position:fixed; inset:0; z-index:9999;
+  background:rgba(0,0,0,.75); backdrop-filter:blur(4px);
+  align-items:center; justify-content:center;">
+  <div style="
+    background:#1e1e1e; border:1px solid #F5C400; border-radius:12px;
+    padding:28px 32px; max-width:420px; width:90%; box-shadow:0 8px 40px rgba(0,0,0,.6);">
+    <div style="color:#F5C400; font-size:20px; margin-bottom:12px;">⚠ Semana já registrada</div>
+    <div id="conf-texto" style="color:#cccccc; font-size:14px; line-height:1.6;"></div>
+    <div style="display:flex; gap:12px; margin-top:24px; justify-content:flex-end;">
+      <button id="conf-btn-nao" style="
+        background:transparent; border:1px solid #555; color:#aaa;
+        padding:8px 20px; border-radius:8px; cursor:pointer; font-size:14px;">
+        Cancelar
+      </button>
+      <button id="conf-btn-sim" style="
+        background:#F5C400; border:none; color:#0a0a0a;
+        padding:8px 20px; border-radius:8px; cursor:pointer; font-size:14px; font-weight:700;">
+        Sobrepor
+      </button>
+    </div>
+  </div>
+</div>
+<script>
+  // Exibe o overlay como flex quando tiver a classe 'open'
+  const _co = document.getElementById('conf-overlay');
+  new MutationObserver(() => {
+    _co.style.display = _co.classList.contains('open') ? 'flex' : 'none';
+  }).observe(_co, { attributes: true, attributeFilter: ['class'] });
 </script>
 </body>
 </html>

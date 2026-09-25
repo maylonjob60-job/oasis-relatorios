@@ -62,237 +62,239 @@ router.post('/gerar-pdf', async (req, res) => {
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${nomeArq}"`);
 
-    const doc = new PDFDocument({ margin: 40, size: 'A4', layout: 'landscape', bufferPages: true });
-    doc.pipe(res);
+    // ── Dimensões fixas ───────────────────────────────────────────────────────
+    const PW  = 841.89;   // A4 landscape largura
+    const PH  = 595.28;   // A4 landscape altura
+    const MAR = 38;
+    const W   = PW - MAR * 2;   // ~766
 
-    const PW    = doc.page.width;   // 841.89
-    const PH    = doc.page.height;  // 595.28
-    const MAR   = 40;
-    const W     = PW - MAR * 2;
     const GOLD  = '#F5C400';
     const DARK  = '#1a1a1a';
     const CINZA = '#444444';
-    const FOOTER_H   = 26;
-    const CONTENT_TOP = 68;   // y onde conteúdo começa (após header)
-    const CONTENT_BOT = PH - FOOTER_H - 4;  // y limite antes do rodapé
 
-    const COL_LABEL = 155;
-    const COL_PREV  = 80;
+    const HEADER_H    = 59;   // cabeçalho escuro + linha dourada
+    const FOOTER_H    = 22;
+    const CONTENT_TOP = HEADER_H + 10;   // y onde conteúdo começa
+    const CONTENT_H   = PH - CONTENT_TOP - FOOTER_H;  // altura útil por página
+
+    // Geometria de colunas
+    const COL_LABEL = 150;
+    const COL_PREV  = 78;
     const COL_SEM   = Math.floor((W - COL_LABEL - COL_PREV) / numCols);
-    const ROW_H     = 20;
-    const HEAD_H    = 28;
-    const SEC_H     = 18;
 
-    // ── Wrapper: renderiza texto sem avançar o cursor do PDFKit ──────────────
-    function txt(str, x, y, opts = {}) {
-      doc.text(str, x, y, opts);
-      doc.y = y; // impede PDFKit de avançar o cursor e adicionar páginas
+    // Geometria de linha: calculada por seção para caber numa só página
+    const SEC_OVERHEAD = 20 + 28;   // título (20) + cabeçalho tabela (28)
+
+    function calcRowH(numRows) {
+      const available = CONTENT_H - SEC_OVERHEAD;
+      // Distribui espaço uniformemente; limita entre 17 e 24pt
+      return Math.min(24, Math.max(17, Math.floor(available / numRows)));
     }
 
-    // ── Cabeçalho (desenhado em cada página) ─────────────────────────────────
+    const ROWS_C = [
+      { label: 'Leads na Semana',     f: 'leads_semana' },
+      { label: 'Leads no Mês',        f: 'leads_mes' },
+      { label: 'Alunos Ativos',       f: 'alunos_ativos',            bold: true },
+      { label: 'Plano Anual',         f: 'alunos_anual' },
+      { label: 'Plano Semestral',     f: 'alunos_semestral' },
+      { label: 'Mensal Recorrente',   f: 'alunos_mensal_recorrente' },
+      { label: 'Mensal Comum',        f: 'alunos_mensal_comum' },
+      { label: 'Natação',             f: 'alunos_natacao' },
+      { label: 'Alunos Bloqueados',   f: 'alunos_bloqueados' },
+      { label: 'Novos na Semana',     f: 'alunos_novos_semana' },
+      { label: 'Novos no Mês',        f: 'alunos_novos_mes' },
+      { label: 'Saídas no Mês',       f: 'alunos_saidos_mes' },
+    ];
+
+    const ROWS_T = [
+      { label: 'Revisões de Treinos',    f: 'revisoes_treinos' },
+      { label: 'Novas Avaliações',       f: 'novas_avaliacoes' },
+      { label: 'Treinos Vencidos',       f: 'treinos_vencidos' },
+      { label: 'Vencendo em 7 dias',     f: 'treinos_vencendo_7dias' },
+      { label: 'Alunos em Experiência',  f: 'alunos_experiencia' },
+      { label: 'Fecharam Experiência',   f: 'alunos_fecharam_experiencia' },
+      { label: 'Conversão Exp. (%)',     f: 'conversao_experiencia', dec: 1 },
+      { label: 'Consultoria Física',     f: 'consultoria_fisica' },
+      { label: 'Total Encarteirados',    f: 'total_encarteirados',   bold: true },
+      ...TRAINERS.map(tr => ({ label: `  ↳ ${tr.nome}`, f: `encarteirados_${tr.key}` })),
+    ];
+
+    const doc = new PDFDocument({
+      margin: 0,
+      size: 'A4',
+      layout: 'landscape',
+      bufferPages: true,
+      autoFirstPage: true,
+    });
+    doc.pipe(res);
+
+    // ── Helpers: todos usam coordenadas explícitas e NÃO avançam o cursor ────
+
+    function t(str, x, y, opts = {}) {
+      // Renderiza texto e FORÇA doc.y de volta — impede PDFKit de gerar páginas
+      const savedY = doc.y;
+      doc.text(String(str), x, y, { lineBreak: false, ...opts });
+      doc.y = savedY;
+    }
+
+    function drawPageBackground(pageBg = '#ffffff') {
+      doc.rect(0, 0, PW, PH).fill(pageBg);
+    }
+
     function drawHeader(labelTipo) {
       doc.rect(0, 0, PW, 56).fill(DARK);
       doc.rect(0, 56, PW, 3).fill(GOLD);
 
-      doc.rect(MAR, 8, 40, 40).fill(GOLD);
-      doc.fillColor(DARK).fontSize(18).font('Helvetica-Bold');
-      txt('O', MAR + 9, 18);
+      // Ícone
+      doc.rect(MAR, 9, 38, 38).fill(GOLD);
+      doc.fillColor(DARK).fontSize(17).font('Helvetica-Bold');
+      t('O', MAR + 8, 18);
 
-      doc.fillColor(GOLD).fontSize(20).font('Helvetica-Bold');
-      txt('OÁSIS', MAR + 50, 12);
-      doc.fillColor('#cccccc').fontSize(10).font('Helvetica');
-      txt('Centro de Treinamento & Saúde', MAR + 50, 33);
+      // Nome
+      doc.fillColor(GOLD).fontSize(19).font('Helvetica-Bold');
+      t('OÁSIS', MAR + 48, 12);
+      doc.fillColor('#cccccc').fontSize(9.5).font('Helvetica');
+      t('Centro de Treinamento & Saúde', MAR + 48, 32);
 
+      // Tipo + data (direita)
       doc.fillColor(GOLD).fontSize(10).font('Helvetica-Bold');
-      txt(labelTipo, 0, 12, { width: PW - MAR, align: 'right' });
+      t(labelTipo, 0, 12, { width: PW - MAR, align: 'right' });
       doc.fillColor('#aaaaaa').fontSize(9).font('Helvetica');
-      txt(`${mesNome} de ${anoNum}`, 0, 28, { width: PW - MAR, align: 'right' });
-      doc.fillColor('#666666').fontSize(8);
-      txt(`Gerado em ${dataStr} às ${horaStr}`, 0, 42, { width: PW - MAR, align: 'right' });
+      t(`${mesNome} de ${anoNum}`, 0, 28, { width: PW - MAR, align: 'right' });
+      doc.fillColor('#666666').fontSize(7.5);
+      t(`Gerado em ${dataStr} às ${horaStr}`, 0, 42, { width: PW - MAR, align: 'right' });
     }
 
-    // ── Rodapé (desenhado no flush final) ────────────────────────────────────
-    function drawFooters(labelTipo) {
-      const range = doc.bufferedPageRange();
-      for (let i = 0; i < range.count; i++) {
-        doc.switchToPage(range.start + i);
-        const fy = PH - FOOTER_H;
-        doc.rect(0, fy, PW, FOOTER_H).fill('#f5f5f5');
-        doc.rect(0, fy, PW, 1).fill('#dddddd');
-        doc.fillColor('#999999').fontSize(7.5).font('Helvetica');
-        txt(`Oásis  ·  ${mesNome} / ${anoNum}  ·  ${dataStr} às ${horaStr}`,
-            MAR, fy + 8, { width: PW - MAR * 2 - 60 });
-        doc.fillColor(DARK).fontSize(7.5).font('Helvetica-Bold');
-        txt(`${i + 1} / ${range.count}`, 0, fy + 8, { width: PW - MAR, align: 'right' });
-        drawHeader(labelTipo);
-      }
+    function drawFooter(pageNum, totalPages) {
+      const fy = PH - FOOTER_H;
+      doc.rect(0, fy, PW, FOOTER_H).fill('#f0f0f0');
+      doc.rect(0, fy, PW, 1).fill('#cccccc');
+      doc.fillColor('#888888').fontSize(7.5).font('Helvetica');
+      t(`Oásis Centro de Treinamento & Saúde  ·  ${mesNome} / ${anoNum}  ·  ${dataStr} às ${horaStr}`,
+        MAR, fy + 7, { width: PW - MAR * 2 - 60 });
+      doc.fillColor(DARK).fontSize(7.5).font('Helvetica-Bold');
+      t(`Pág. ${pageNum} / ${totalPages}`, 0, fy + 7, { width: PW - MAR, align: 'right' });
     }
 
-    // ── Nova página + cabeçalho ───────────────────────────────────────────────
-    function newPage(labelTipo) {
-      doc.addPage();
-      drawHeader(labelTipo);
-      doc.y = CONTENT_TOP;
-      return CONTENT_TOP;
-    }
-
-    // ── Garante espaço; se não couber, inicia nova página ───────────────────
-    function ensureSpace(y, needed, labelTipo) {
-      if (y + needed > CONTENT_BOT) return newPage(labelTipo);
-      return y;
-    }
-
-    // ── Linha de cabeçalho da tabela ─────────────────────────────────────────
-    function headerRow(y, semLabels) {
+    function drawTableHeader(y, semLabels, HEAD_H) {
       doc.rect(MAR, y, W, HEAD_H).fill('#1e1e1e');
       doc.fillColor(GOLD).fontSize(7).font('Helvetica-Bold');
-      txt('INDICADOR', MAR + 4, y + 10, { width: COL_LABEL - 8 });
+      t('INDICADOR', MAR + 4, y + HEAD_H / 2 - 4, { width: COL_LABEL - 8 });
 
       let x = MAR + COL_LABEL;
       doc.rect(x, y, COL_PREV, HEAD_H).fill('#2a2a2a');
-      doc.fillColor(GOLD).fontSize(8).font('Helvetica-Bold');
-      txt(mesPrevNome.toUpperCase(), x + 3, y + 4, { width: COL_PREV - 6, align: 'center' });
-      doc.fillColor('#888888').fontSize(6.5).font('Helvetica');
-      txt('MÊS ANTERIOR', x + 3, y + 16, { width: COL_PREV - 6, align: 'center' });
+      doc.fillColor(GOLD).fontSize(7.5).font('Helvetica-Bold');
+      t(mesPrevNome.toUpperCase(), x + 3, y + 4, { width: COL_PREV - 6, align: 'center' });
+      doc.fillColor('#888888').fontSize(6).font('Helvetica');
+      t('MÊS ANTERIOR', x + 3, y + 14, { width: COL_PREV - 6, align: 'center' });
 
       x += COL_PREV;
       for (let i = 0; i < numCols; i++) {
-        const label = semLabels[i] || `S${i + 1}`;
+        const lbl = semLabels[i] || `S${i + 1}`;
         doc.rect(x, y, COL_SEM, HEAD_H).fill(i % 2 === 0 ? '#1b3520' : '#172e1c');
         doc.fillColor('#5ddd90').fontSize(10).font('Helvetica-Bold');
-        txt(label, x + 2, y + 8, { width: COL_SEM - 4, align: 'center' });
+        t(lbl, x + 2, y + HEAD_H / 2 - 5, { width: COL_SEM - 4, align: 'center' });
         x += COL_SEM;
       }
-      return y + HEAD_H;
     }
 
-    // ── Linha de dado ────────────────────────────────────────────────────────
-    function dataRow(y, label, prevVal, semVals, opts = {}) {
+    function drawDataRow(y, label, prevVal, semVals, rowH, opts = {}) {
       const { bold = false, odd = false, dec = 0 } = opts;
-      const bgRow = bold ? '#fffbe6' : (odd ? '#f4f4f4' : '#ffffff');
+      const bg = bold ? '#fffbe6' : (odd ? '#f4f4f4' : '#ffffff');
+      const textY = y + rowH / 2 - 4;
+      const fs = bold ? 8.5 : 8;
 
-      doc.rect(MAR, y, W, ROW_H).fill(bgRow);
-      doc.rect(MAR, y + ROW_H - 1, W, 1).fill('#e8e8e8');
+      doc.rect(MAR, y, W, rowH).fill(bg);
+      doc.rect(MAR, y + rowH - 1, W, 1).fill('#e0e0e0');
 
-      doc.fillColor(bold ? '#1a1a00' : '#333333')
-         .fontSize(bold ? 8.5 : 8).font(bold ? 'Helvetica-Bold' : 'Helvetica');
-      txt(label, MAR + 4, y + 6, { width: COL_LABEL - 8 });
+      doc.fillColor(bold ? '#111100' : '#333333').fontSize(fs)
+         .font(bold ? 'Helvetica-Bold' : 'Helvetica');
+      t(label, MAR + 5, textY, { width: COL_LABEL - 10 });
 
       let x = MAR + COL_LABEL;
-      doc.rect(x, y, COL_PREV, ROW_H).fill(odd ? '#ececec' : '#f0f0f0');
+      doc.rect(x, y, COL_PREV, rowH).fill(odd ? '#ebebeb' : '#efefef');
       const pv = dec > 0 && prevVal != null ? Number(prevVal).toFixed(dec) : prevVal;
-      doc.fillColor('#111111').fontSize(bold ? 9 : 8.5).font(bold ? 'Helvetica-Bold' : 'Helvetica');
-      txt(fmt(pv), x + 3, y + 6, { width: COL_PREV - 6, align: 'right' });
+      doc.fillColor('#111111').fontSize(fs).font(bold ? 'Helvetica-Bold' : 'Helvetica');
+      t(fmt(pv), x + 3, textY, { width: COL_PREV - 6, align: 'right' });
 
       x += COL_PREV;
       for (let i = 0; i < numCols; i++) {
         const raw = semVals[i] ?? null;
         const sv  = dec > 0 && raw != null ? Number(raw).toFixed(dec) : raw;
-        const bg  = i % 2 === 0 ? (odd ? '#fafafa' : '#ffffff') : (odd ? '#f6f6f6' : '#fafafa');
-        doc.rect(x, y, COL_SEM, ROW_H).fill(bg);
-        doc.fillColor(raw != null ? DARK : '#bbbbbb')
-           .fontSize(bold ? 9 : 8.5).font(bold ? 'Helvetica-Bold' : 'Helvetica');
-        txt(fmt(sv, dec), x + 2, y + 6, { width: COL_SEM - 4, align: 'center' });
+        const cbg = i % 2 === 0 ? (odd ? '#fafafa' : '#ffffff') : (odd ? '#f5f5f5' : '#fafafa');
+        doc.rect(x, y, COL_SEM, rowH).fill(cbg);
+        doc.fillColor(raw != null ? DARK : '#bbbbbb').fontSize(fs)
+           .font(bold ? 'Helvetica-Bold' : 'Helvetica');
+        t(fmt(sv, dec), x + 2, textY, { width: COL_SEM - 4, align: 'center' });
         x += COL_SEM;
       }
-      return y + ROW_H;
     }
 
-    // ── Título de seção ───────────────────────────────────────────────────────
-    function sectionTitle(y, titulo, bg = GOLD) {
-      doc.rect(MAR, y, W, SEC_H).fill(bg);
-      doc.fillColor(bg === GOLD ? DARK : GOLD).fontSize(8.5).font('Helvetica-Bold');
-      txt(titulo, MAR + 8, y + 4, { width: W - 16 });
-      return y + SEC_H + 2;
+    function drawSectionTitle(y, titulo, bg = GOLD) {
+      const h = 20;
+      doc.rect(MAR, y, W, h).fill(bg);
+      doc.fillColor(bg === GOLD ? '#0a0a0a' : GOLD).fontSize(8.5).font('Helvetica-Bold');
+      t(titulo, MAR + 9, y + 5, { width: W - 18 });
+      return h;
     }
 
-    function semLabelsList(sems) {
-      const labels = sems.map(r => `S${r.semana}`);
-      while (labels.length < numCols) labels.push(`S${labels.length + 1}`);
-      return labels;
-    }
-    function semValsList(sems, field) {
-      return Array.from({ length: numCols }, (_, i) => sems[i]?.[field] ?? null);
+    function renderSection(rows, sems, prev, labelTipo, bgTitulo, tituloTexto) {
+      const semLabels = sems.map(r => `S${r.semana}`);
+      while (semLabels.length < numCols) semLabels.push(`S${semLabels.length + 1}`);
+
+      const rowH  = calcRowH(rows.length);
+      const HEAD_H = Math.max(24, rowH + 4);
+
+      let y = CONTENT_TOP;
+
+      drawPageBackground('#fafafa');
+      drawHeader(labelTipo);
+
+      // Título da seção
+      const titleH = drawSectionTitle(y, tituloTexto, bgTitulo);
+      y += titleH + 2;
+
+      // Cabeçalho da tabela
+      drawTableHeader(y, semLabels, HEAD_H);
+      y += HEAD_H;
+
+      // Linhas de dados
+      rows.forEach((r, i) => {
+        const semVals = Array.from({ length: numCols }, (_, ci) => sems[ci]?.[r.f] ?? null);
+        drawDataRow(y, r.label, prev?.[r.f], semVals, rowH,
+          { bold: r.bold, odd: i % 2 !== 0, dec: r.dec || 0 });
+        y += rowH;
+      });
     }
 
-    // ── Renderização ──────────────────────────────────────────────────────────
+    // ── Decide quais seções renderizar ────────────────────────────────────────
     const labelTipo = tipo === 'comercial' ? 'RELATÓRIO COMERCIAL'
                     : tipo === 'tecnico'   ? 'RELATÓRIO TÉCNICO'
                     : 'RELATÓRIO COMPLETO';
-    drawHeader(labelTipo);
-    let y = CONTENT_TOP;
 
-    // ── Seção Comercial ───────────────────────────────────────────────────────
-    if ((tipo === 'completo' || tipo === 'comercial') && (semsC.length || prevC)) {
-      const lbls = semLabelsList(semsC);
+    const renderC = (tipo === 'completo' || tipo === 'comercial') && (semsC.length || prevC);
+    const renderT = (tipo === 'completo' || tipo === 'tecnico')   && (semsT.length || prevT);
+    const totalPages = (renderC ? 1 : 0) + (renderT ? 1 : 0);
 
-      y = ensureSpace(y, SEC_H + 2 + HEAD_H + ROW_H, labelTipo);
-      y = sectionTitle(y, 'EQUIPE COMERCIAL');
-      y = headerRow(y, lbls);
+    let pageNum = 0;
 
-      const rowsC = [
-        { label: 'Leads na Semana',     f: 'leads_semana' },
-        { label: 'Leads no Mês',        f: 'leads_mes' },
-        { label: 'Alunos Ativos',       f: 'alunos_ativos',            bold: true },
-        { label: 'Plano Anual',         f: 'alunos_anual' },
-        { label: 'Plano Semestral',     f: 'alunos_semestral' },
-        { label: 'Mensal Recorrente',   f: 'alunos_mensal_recorrente' },
-        { label: 'Mensal Comum',        f: 'alunos_mensal_comum' },
-        { label: 'Natação',             f: 'alunos_natacao' },
-        { label: 'Alunos Bloqueados',   f: 'alunos_bloqueados' },
-        { label: 'Novos na Semana',     f: 'alunos_novos_semana' },
-        { label: 'Novos no Mês',        f: 'alunos_novos_mes' },
-        { label: 'Saídas no Mês',       f: 'alunos_saidos_mes' },
-      ];
-
-      rowsC.forEach((r, i) => {
-        y = ensureSpace(y, ROW_H, labelTipo);
-        if (y === CONTENT_TOP) y = headerRow(y, lbls); // redraws header after page break
-        y = dataRow(y, r.label, prevC?.[r.f], semValsList(semsC, r.f),
-            { bold: r.bold, odd: i % 2 !== 0 });
-      });
-
-      y += 6;
+    if (renderC) {
+      pageNum++;
+      // PDFKit já cria a primeira página automaticamente
+      renderSection(ROWS_C, semsC, prevC, labelTipo, GOLD, 'EQUIPE COMERCIAL');
+      drawFooter(pageNum, totalPages);
     }
 
-    // ── Seção Técnica ─────────────────────────────────────────────────────────
-    if ((tipo === 'completo' || tipo === 'tecnico') && (semsT.length || prevT)) {
-      const lbls = semLabelsList(semsT);
-
-      // Para 'completo', seção técnica sempre inicia em nova página
-      if (tipo === 'completo') {
-        y = newPage(labelTipo);
-      } else {
-        y = ensureSpace(y, SEC_H + 2 + HEAD_H + ROW_H, labelTipo);
-      }
-
-      y = sectionTitle(y, 'EQUIPE TÉCNICA', CINZA);
-      y = headerRow(y, lbls);
-
-      const rowsT = [
-        { label: 'Revisões de Treinos',    f: 'revisoes_treinos' },
-        { label: 'Novas Avaliações',       f: 'novas_avaliacoes' },
-        { label: 'Treinos Vencidos',       f: 'treinos_vencidos' },
-        { label: 'Vencendo em 7 dias',     f: 'treinos_vencendo_7dias' },
-        { label: 'Alunos em Experiência',  f: 'alunos_experiencia' },
-        { label: 'Fecharam Experiência',   f: 'alunos_fecharam_experiencia' },
-        { label: 'Conversão Exp. (%)',     f: 'conversao_experiencia',  dec: 1 },
-        { label: 'Consultoria Física',     f: 'consultoria_fisica' },
-        { label: 'Total Encarteirados',    f: 'total_encarteirados',    bold: true },
-        ...TRAINERS.map(tr => ({ label: `  ↳ ${tr.nome}`, f: `encarteirados_${tr.key}` })),
-      ];
-
-      rowsT.forEach((r, i) => {
-        y = ensureSpace(y, ROW_H, labelTipo);
-        if (y === CONTENT_TOP) y = headerRow(y, lbls);
-        y = dataRow(y, r.label, prevT?.[r.f], semValsList(semsT, r.f),
-            { bold: r.bold, odd: i % 2 !== 0, dec: r.dec || 0 });
-      });
+    if (renderT) {
+      pageNum++;
+      if (pageNum > 1) doc.addPage(); // segunda página apenas se necessário
+      else drawPageBackground('#fafafa'); // única página
+      renderSection(ROWS_T, semsT, prevT, labelTipo, CINZA, 'EQUIPE TÉCNICA');
+      drawFooter(pageNum, totalPages);
     }
 
-    // ── Rodapés + flush ───────────────────────────────────────────────────────
-    doc.y = CONTENT_TOP; // evita que PDFKit adicione página extra no flush
-    drawFooters(labelTipo);
+    // ── Fecha sem adicionar páginas extras ────────────────────────────────────
+    doc.y = CONTENT_TOP; // segura cursor longe do limite da página
     doc.flushPages();
     doc.end();
 

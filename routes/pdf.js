@@ -101,6 +101,7 @@ router.post('/gerar-pdf', async (req, res) => {
       { label: 'Mensal Comum',        f: 'alunos_mensal_comum' },
       { label: 'Natação',             f: 'alunos_natacao' },
       { label: 'Alunos Bloqueados',   f: 'alunos_bloqueados' },
+      { label: 'Alunos Suspensos',    f: 'alunos_suspensos' },
       { label: 'Novos na Semana',     f: 'alunos_novos_semana' },
       { label: 'Novos no Mês',        f: 'alunos_novos_mes' },
       { label: 'Saídas no Mês',       f: 'alunos_saidos_mes' },

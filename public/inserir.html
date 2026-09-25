@@ -524,6 +524,10 @@
             <label>Alunos Bloqueados</label>
             <input id="c-alunos-bloqueados" type="number" min="0" placeholder="0" />
           </div>
+          <div class="field">
+            <label>Alunos Suspensos</label>
+            <input id="c-alunos-suspensos" type="number" min="0" placeholder="0" />
+          </div>
         </div>
       </div>
 
@@ -924,6 +928,7 @@ async function salvarComercial(overwrite = false) {
     alunos_novos_semana:      intVal('c-novos-sem'),
     alunos_novos_mes:         intVal('c-novos-mes'),
     alunos_bloqueados:        intVal('c-alunos-bloqueados'),
+    alunos_suspensos:         intVal('c-alunos-suspensos'),
   };
 
   try {

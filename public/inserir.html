@@ -494,6 +494,26 @@
         <div class="leads-mes-info" id="leads-mes-info"></div>
       </div>
 
+      <!-- Evasão -->
+      <div class="section">
+        <div class="section-title">Evasão de Clientes</div>
+        <div class="form-grid g2">
+          <div class="field">
+            <label>Evasão na Semana</label>
+            <input id="c-evasao-semana" type="number" min="0" placeholder="0" />
+          </div>
+          <div class="field">
+            <label>
+              Evasão no Mês
+              <span class="hint" style="display:block;font-size:11px;margin-top:2px;">Auto: soma das semanas do mês</span>
+            </label>
+            <input id="c-evasao-mes" type="number" min="0" placeholder="0" readonly
+                   style="background:rgba(245,196,0,.07);cursor:default;" />
+          </div>
+        </div>
+        <div class="leads-mes-info" id="evasao-mes-info"></div>
+      </div>
+
       <!-- Base de Alunos -->
       <div class="form-section">
         <div class="form-section-title">
@@ -795,6 +815,7 @@ function onPeriodoChange() {
     updateStatus();
   }
   calcLeadsMes();
+  calcEvasaoMes();
 }
 
 $('periodo-semana').addEventListener('change', onPeriodoChange);
@@ -806,6 +827,13 @@ let leadsDebounce;
 $('c-leads-semana').addEventListener('input', () => {
   clearTimeout(leadsDebounce);
   leadsDebounce = setTimeout(calcLeadsMes, 400);
+});
+
+/* ── Evasão Mês (auto-cálculo) ────────────────────────── */
+let evasaoDebounce;
+$('c-evasao-semana').addEventListener('input', () => {
+  clearTimeout(evasaoDebounce);
+  evasaoDebounce = setTimeout(calcEvasaoMes, 400);
 });
 
 async function calcLeadsMes() {
@@ -843,6 +871,40 @@ async function calcLeadsMes() {
   }
 }
 
+async function calcEvasaoMes() {
+  const { semana, mes, ano } = getPeriodo();
+  const evasaoSem = intVal('c-evasao-semana');
+
+  if (!mes || !ano) {
+    $('c-evasao-mes').value = evasaoSem || '';
+    $('evasao-mes-info').classList.remove('show');
+    return;
+  }
+
+  try {
+    const res  = await fetch(`/api/historico?mes=${mes}&ano=${ano}`);
+    const data = await res.json();
+
+    const registros = data.comercial.filter(r => !semana || r.semana !== semana);
+    const somaOther = registros.reduce((acc, r) => acc + (r.evasao_semana || 0), 0);
+    const total     = somaOther + evasaoSem;
+
+    $('c-evasao-mes').value = total;
+
+    if (registros.length > 0) {
+      const det = registros.map(r => `S${r.semana}: ${r.evasao_semana}`).join(' · ');
+      $('evasao-mes-info').textContent =
+        `Semanas anteriores do mês: ${det} (soma ${somaOther}) + atual ${evasaoSem} = ${total}`;
+      $('evasao-mes-info').classList.add('show');
+    } else {
+      $('evasao-mes-info').classList.remove('show');
+    }
+  } catch {
+    $('c-evasao-mes').value = evasaoSem;
+    $('evasao-mes-info').classList.remove('show');
+  }
+}
+
 /* ── Conversão Experiência (auto-cálculo) ─────────────── */
 function calcConversao() {
   const exp   = intVal('t-alunos-exp');
@@ -867,10 +929,11 @@ function calcTotalEnc() {
 /* ── Limpar ──────────────────────────────────────────── */
 function limpar(tab) {
   if (tab === 'comercial') {
-    ['c-leads-semana','c-leads-mes','c-alunos-ativos','c-alunos-anual',
-     'c-alunos-rec','c-alunos-com','c-alunos-nat','c-saidos',
-     'c-novos-sem','c-novos-mes'].forEach(id => $(id).value = '');
+    ['c-leads-semana','c-leads-mes','c-evasao-semana','c-evasao-mes',
+     'c-alunos-ativos','c-alunos-anual','c-alunos-rec','c-alunos-com',
+     'c-alunos-nat','c-saidos','c-novos-sem','c-novos-mes'].forEach(id => $(id).value = '');
     $('leads-mes-info').classList.remove('show');
+    $('evasao-mes-info').classList.remove('show');
   } else {
     ['t-revisoes','t-avaliacoes','t-vencidos','t-vencendo',
      't-alunos-exp','t-fecharam','t-consultoria'].forEach(id => $(id).value = '');
@@ -913,6 +976,7 @@ async function salvarComercial(overwrite = false) {
     toast('Preencha Semana, Mês e Ano antes de salvar.', 'err'); return;
   }
   await calcLeadsMes();
+  await calcEvasaoMes();
 
   const body = {
     semana, mes, ano, overwrite,
@@ -929,6 +993,8 @@ async function salvarComercial(overwrite = false) {
     alunos_novos_mes:         intVal('c-novos-mes'),
     alunos_bloqueados:        intVal('c-alunos-bloqueados'),
     alunos_suspensos:         intVal('c-alunos-suspensos'),
+    evasao_semana:            intVal('c-evasao-semana'),
+    evasao_mes:               intVal('c-evasao-mes'),
   };
 
   try {
@@ -1078,8 +1144,9 @@ $('periodo-semana').value = Math.min(semAtual, 52);
 // Pré-preenche o mês atual
 $('periodo-mes').value = new Date().getMonth() + 1;
 
-// Calcula leads do mês com os valores iniciais
+// Calcula totais do mês com os valores iniciais
 calcLeadsMes();
+calcEvasaoMes();
 </script>
 
 <!-- Modal de confirmação de sobreposição -->

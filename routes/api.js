@@ -26,7 +26,8 @@ router.post('/comercial', async (req, res) => {
     'evasao_semana', 'evasao_mes',
   ];
   const row = { semana: int(semana), mes: int(mes), ano: int(ano) };
-  fields.forEach(f => { row[f] = int(req.body[f]) ?? 0; });
+  // Só grava campos enviados: sobrepor uma semana não zera campos fora do formulário
+  fields.forEach(f => { if (f in req.body) row[f] = int(req.body[f]) ?? 0; });
 
   const { data: existing } = await supabase.from('comercial')
     .select('id, data_registro').eq('semana', int(semana)).eq('mes', int(mes)).eq('ano', int(ano)).maybeSingle();
@@ -59,7 +60,7 @@ router.post('/tecnico', async (req, res) => {
     'encarteirados_lucas', 'encarteirados_michele', 'encarteirados_n3',
   ];
   const row = { semana: int(semana), mes: int(mes), ano: int(ano) };
-  fields.forEach(f => { row[f] = int(req.body[f]) ?? 0; });
+  fields.forEach(f => { if (f in req.body) row[f] = int(req.body[f]) ?? 0; });
 
   const { data: existing } = await supabase.from('tecnico')
     .select('id, data_registro').eq('semana', int(semana)).eq('mes', int(mes)).eq('ano', int(ano)).maybeSingle();

@@ -612,10 +612,6 @@
           <input type="number" name="alunos_natacao" min="0" placeholder="0" />
         </div>
         <div class="field">
-          <label>Saídas no Mês</label>
-          <input type="number" name="alunos_saidos_mes" min="0" placeholder="0" />
-        </div>
-        <div class="field">
           <label>Novos na Semana</label>
           <input type="number" name="alunos_novos_semana" min="0" placeholder="0" />
         </div>
@@ -779,10 +775,11 @@
             <th style="text-align:right">Leads Mês</th>
             <th style="text-align:right">Ativos</th>
             <th style="text-align:right">Anual</th>
+            <th style="text-align:right">Semestral</th>
             <th style="text-align:right">Mensal Rec.</th>
             <th style="text-align:right">Mensal Com.</th>
             <th style="text-align:right">Natação</th>
-            <th style="text-align:right">Saídas</th>
+            <th style="text-align:right">Evasão Sem.</th>
             <th style="text-align:right">Novos Sem.</th>
             <th style="text-align:right">Novos Mês</th>
             <th>Registrado em</th>
@@ -1410,7 +1407,7 @@ async function carregarHistorico() {
           <td class="num">${fmt(r.alunos_mensal_recorrente)}</td>
           <td class="num">${fmt(r.alunos_mensal_comum)}</td>
           <td class="num">${fmt(r.alunos_natacao)}</td>
-          <td class="num">${fmt(r.alunos_saidos_mes)}</td>
+          <td class="num">${fmt(r.evasao_semana)}</td>
           <td class="num">${fmt(r.alunos_novos_semana)}</td>
           <td class="num">${fmt(r.alunos_novos_mes)}</td>
           <td style="color:var(--muted);font-size:12px">${(r.data_registro||'').substring(0,16)}</td>
@@ -1493,7 +1490,6 @@ function renderComparar(lado, periodo, titulo, filtro) {
     ['Leads na Semana',      c.leads_semana,              null, false],
     ['Leads no Mês',         c.leads_mes,                 null, false],
     ['Novos no Mês',         c.alunos_novos_mes,          null, false],
-    ['Saídas no Mês',        c.alunos_saidos_mes,         null, true],
     ['Plano Anual',          c.alunos_anual,              null, false],
     ['Plano Semestral',      c.alunos_semestral,          null, false],
     ['Mensal Recorrente',    c.alunos_mensal_recorrente,  null, false],

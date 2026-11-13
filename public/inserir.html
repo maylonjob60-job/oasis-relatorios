@@ -424,6 +424,7 @@
         <div class="periodo-field">
           <label>Semana</label>
           <input id="periodo-semana" type="number" min="1" max="53" placeholder="Ex: 25" />
+          <span id="semana-datas" style="display:block;font-size:11px;color:#888;margin-top:4px;"></span>
         </div>
         <div class="periodo-field">
           <label>Mês</label>
@@ -560,10 +561,6 @@
           <div class="field">
             <label>Natação</label>
             <input id="c-alunos-nat" type="number" min="0" placeholder="0" />
-          </div>
-          <div class="field">
-            <label>Saídas no Mês</label>
-            <input id="c-saidos" type="number" min="0" placeholder="0" />
           </div>
           <div class="field">
             <label>Novos na Semana</label>
@@ -935,7 +932,7 @@ function limpar(tab) {
   if (tab === 'comercial') {
     ['c-leads-semana','c-leads-mes','c-evasao-semana','c-evasao-mes',
      'c-alunos-ativos','c-alunos-anual','c-alunos-rec','c-alunos-com',
-     'c-alunos-nat','c-saidos','c-novos-sem','c-novos-mes'].forEach(id => $(id).value = '');
+     'c-alunos-nat','c-novos-sem','c-novos-mes'].forEach(id => $(id).value = '');
     $('leads-mes-info').classList.remove('show');
     $('evasao-mes-info').classList.remove('show');
   } else {
@@ -992,7 +989,6 @@ async function salvarComercial(overwrite = false) {
     alunos_mensal_recorrente: intVal('c-alunos-rec'),
     alunos_mensal_comum:      intVal('c-alunos-com'),
     alunos_natacao:           intVal('c-alunos-nat'),
-    alunos_saidos_mes:        intVal('c-saidos'),
     alunos_novos_semana:      intVal('c-novos-sem'),
     alunos_novos_mes:         intVal('c-novos-mes'),
     alunos_bloqueados:        intVal('c-alunos-bloqueados'),
@@ -1142,9 +1138,27 @@ updateStatus();
 const anoAtual = new Date().getFullYear();
 $('periodo-ano').value = anoAtual;
 
-// Pré-preenche a semana atual (aproximado)
-const semAtual = Math.ceil((new Date() - new Date(anoAtual, 0, 1)) / (7 * 864e5));
-$('periodo-semana').value = Math.min(semAtual, 52);
+// Semana do calendário (segunda a domingo, ISO 8601) — mesma regra do relatório PDF
+function semanaIso(data) {
+  const d = new Date(Date.UTC(data.getFullYear(), data.getMonth(), data.getDate()));
+  const dow = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dow);
+  return Math.ceil(((d - Date.UTC(d.getUTCFullYear(), 0, 1)) / 864e5 + 1) / 7);
+}
+function mostrarDatasSemana() {
+  const { semana, ano } = getPeriodo();
+  if (!semana || !ano) { $('semana-datas').textContent = ''; return; }
+  const jan4 = Date.UTC(ano, 0, 4);
+  const seg  = new Date(jan4 - ((new Date(jan4).getUTCDay() || 7) - 1) * 864e5 + (semana - 1) * 7 * 864e5);
+  const dom  = new Date(seg.getTime() + 6 * 864e5);
+  const f = d => `${String(d.getUTCDate()).padStart(2,'0')}/${String(d.getUTCMonth()+1).padStart(2,'0')}`;
+  $('semana-datas').textContent = `${f(seg)} a ${f(dom)}`;
+}
+$('periodo-semana').addEventListener('input', mostrarDatasSemana);
+$('periodo-ano').addEventListener('input', mostrarDatasSemana);
+
+$('periodo-semana').value = semanaIso(new Date());
+mostrarDatasSemana();
 
 // Pré-preenche o mês atual
 $('periodo-mes').value = new Date().getMonth() + 1;

@@ -56,7 +56,7 @@ router.post('/tecnico', async (req, res) => {
     'alunos_experiencia', 'alunos_fecharam_experiencia', 'consultoria_fisica',
     'total_encarteirados', 'encarteirados_diego', 'encarteirados_luiz',
     'encarteirados_vinicius', 'encarteirados_arthur', 'encarteirados_caio',
-    'encarteirados_lucas', 'encarteirados_michele',
+    'encarteirados_lucas', 'encarteirados_michele', 'encarteirados_n3',
   ];
   const row = { semana: int(semana), mes: int(mes), ano: int(ano) };
   fields.forEach(f => { row[f] = int(req.body[f]) ?? 0; });

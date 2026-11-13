@@ -707,6 +707,7 @@
         <div class="field"><label>Caio</label><input type="number" name="encarteirados_caio" min="0" placeholder="0" /></div>
         <div class="field"><label>Lucas</label><input type="number" name="encarteirados_lucas" min="0" placeholder="0" /></div>
         <div class="field"><label>Michele</label><input type="number" name="encarteirados_michele" min="0" placeholder="0" /></div>
+        <div class="field"><label>N3 (sozinho/personal)</label><input type="number" name="encarteirados_n3" min="0" placeholder="0" /></div>
       </div>
 
       <div class="form-actions">
@@ -891,7 +892,7 @@ const SURFACE   = '#141414';
 const TEXT      = '#e0e0dc';
 const MUTED     = '#888';
 const MESES     = ['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-const TREINADORES = ['Betão','Luiz','Vinícius','Arthur','Caio','Lucas','Michele'];
+const TREINADORES = ['Betão','Luiz','Vinícius','Arthur','Caio','Lucas','Michele','N3'];
 
 const chartInstances = {};
 
@@ -1171,7 +1172,7 @@ function grafPlanos(c) {
 /* ── Gráfico 4: Barras horizontais — encarteirados por treinador ──── */
 function grafTreinadores(t, alunosAtivos) {
   const nomes  = TREINADORES;
-  const chaves = ['diego','luiz','vinicius','arthur','caio','lucas','michele'];
+  const chaves = ['diego','luiz','vinicius','arthur','caio','lucas','michele','n3'];
   const vals   = chaves.map(k => t[`encarteirados_${k}`] || 0);
   const meta   = alunosAtivos ? Math.round(alunosAtivos * 0.6 / 7) : 0;
 
@@ -1272,7 +1273,7 @@ function renderTabelaEncarteirados(t, alunosAtivos, vals, pcts, meta) {
     chartCard.appendChild(wrap);
   }
 
-  const chaves = ['diego','luiz','vinicius','arthur','caio','lucas','michele'];
+  const chaves = ['diego','luiz','vinicius','arthur','caio','lucas','michele','n3'];
   const totalEnc = vals.reduce((a, v) => a + v, 0);
   const totalPct = alunosAtivos > 0 ? ((totalEnc / alunosAtivos) * 100).toFixed(1) : null;
 

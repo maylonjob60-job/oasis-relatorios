@@ -560,6 +560,7 @@ function mediaTecnico(rows) {
     encarteirados_caio:          +(sum('encarteirados_caio') / n).toFixed(1),
     encarteirados_lucas:         +(sum('encarteirados_lucas') / n).toFixed(1),
     encarteirados_michele:       +(sum('encarteirados_michele') / n).toFixed(1),
+    encarteirados_n3:            +(sum('encarteirados_n3')      / n).toFixed(1),
     _media: true,
   };
 }
@@ -669,6 +670,7 @@ function definirMetricasT(t1, t2) {
     { label: '↳ Caio',                  v1: v1('encarteirados_caio'),          v2: v2('encarteirados_caio'),          better: 'high' },
     { label: '↳ Lucas',                 v1: v1('encarteirados_lucas'),         v2: v2('encarteirados_lucas'),         better: 'high' },
     { label: '↳ Michele',               v1: v1('encarteirados_michele'),       v2: v2('encarteirados_michele'),       better: 'high' },
+    { label: '↳ N3 (sozinho/personal)', v1: v1('encarteirados_n3'),            v2: v2('encarteirados_n3'),            better: 'high' },
   ];
 }
 

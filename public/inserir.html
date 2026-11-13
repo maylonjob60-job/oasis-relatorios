@@ -702,6 +702,10 @@
             <label>Michele</label>
             <input id="t-enc-michele" type="number" min="0" placeholder="0" oninput="calcTotalEnc()" />
           </div>
+          <div class="treinador-field">
+            <label>N3 <span style="font-weight:400;opacity:.7">(sozinho/personal)</span></label>
+            <input id="t-enc-n3" type="number" min="0" placeholder="0" oninput="calcTotalEnc()" />
+          </div>
         </div>
 
         <div class="total-encarteirados-display">
@@ -918,7 +922,7 @@ function calcConversao() {
 }
 
 /* ── Total Encarteirados (auto-soma) ──────────────────── */
-const ENC_KEYS = ['diego','luiz','vinicius','arthur','caio','lucas','michele'];
+const ENC_KEYS = ['diego','luiz','vinicius','arthur','caio','lucas','michele','n3'];
 
 function calcTotalEnc() {
   const total = ENC_KEYS.reduce((sum, k) => sum + intVal(`t-enc-${k}`), 0);
@@ -1043,6 +1047,7 @@ async function salvarTecnico(overwrite = false) {
     encarteirados_caio:          intVal('t-enc-caio'),
     encarteirados_lucas:         intVal('t-enc-lucas'),
     encarteirados_michele:       intVal('t-enc-michele'),
+    encarteirados_n3:            intVal('t-enc-n3'),
   };
 
   try {

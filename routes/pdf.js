@@ -13,7 +13,22 @@ const TRAINERS = [
   { key: 'caio',     nome: 'Caio'     },
   { key: 'lucas',    nome: 'Lucas'    },
   { key: 'michele',  nome: 'Michele'  },
+  { key: 'n3',       nome: 'N3 (sozinho/personal)' },
 ];
+
+// Coluna "mês anterior": indicadores semanais (agg 'sum') são somados;
+// os demais (base de alunos, acumulados do mês) usam o fechamento da última semana.
+function agregarMes(sems, rows) {
+  if (!sems || !sems.length) return null;
+  const ultima = sems[sems.length - 1];
+  const out = {};
+  rows.forEach(r => {
+    out[r.f] = r.agg === 'sum'
+      ? sems.reduce((acc, s) => acc + (Number(s[r.f]) || 0), 0)
+      : ultima[r.f];
+  });
+  return out;
+}
 
 function fmt(v, dec = 0) {
   if (v == null) return '—';
@@ -36,18 +51,14 @@ router.post('/gerar-pdf', async (req, res) => {
   if (mesPrev < 1) { mesPrev = 12; anoPrev--; }
 
   try {
-    const [{ data: semC }, { data: semT }, { data: prevCArr }, { data: prevTArr }] =
+    const [{ data: semC }, { data: semT }, { data: prevCSems }, { data: prevTSems }] =
       await Promise.all([
         supabase.from('comercial').select('*').eq('mes', mesNum).eq('ano', anoNum).order('semana'),
         supabase.from('tecnico').select('*').eq('mes', mesNum).eq('ano', anoNum).order('semana'),
-        supabase.from('comercial').select('*').eq('mes', mesPrev).eq('ano', anoPrev)
-          .order('semana', { ascending: false }).limit(1),
-        supabase.from('tecnico').select('*').eq('mes', mesPrev).eq('ano', anoPrev)
-          .order('semana', { ascending: false }).limit(1),
+        supabase.from('comercial').select('*').eq('mes', mesPrev).eq('ano', anoPrev).order('semana'),
+        supabase.from('tecnico').select('*').eq('mes', mesPrev).eq('ano', anoPrev).order('semana'),
       ]);
 
-    const prevC   = prevCArr?.[0] || null;
-    const prevT   = prevTArr?.[0] || null;
     const semsC   = semC || [];
     const semsT   = semT || [];
     const numCols = Math.max(semsC.length, semsT.length, 4);
@@ -92,7 +103,7 @@ router.post('/gerar-pdf', async (req, res) => {
     }
 
     const ROWS_C = [
-      { label: 'Leads na Semana',     f: 'leads_semana' },
+      { label: 'Leads na Semana',     f: 'leads_semana',             agg: 'sum' },
       { label: 'Leads no Mês',        f: 'leads_mes' },
       { label: 'Alunos Ativos',       f: 'alunos_ativos',            bold: true },
       { label: 'Plano Anual',         f: 'alunos_anual' },
@@ -102,25 +113,33 @@ router.post('/gerar-pdf', async (req, res) => {
       { label: 'Natação',             f: 'alunos_natacao' },
       { label: 'Alunos Bloqueados',   f: 'alunos_bloqueados' },
       { label: 'Alunos Suspensos',    f: 'alunos_suspensos' },
-      { label: 'Evasão na Semana',    f: 'evasao_semana' },
+      { label: 'Evasão na Semana',    f: 'evasao_semana',            agg: 'sum' },
       { label: 'Evasão no Mês',       f: 'evasao_mes' },
-      { label: 'Novos na Semana',     f: 'alunos_novos_semana' },
+      { label: 'Novos na Semana',     f: 'alunos_novos_semana',      agg: 'sum' },
       { label: 'Novos no Mês',        f: 'alunos_novos_mes' },
       { label: 'Saídas no Mês',       f: 'alunos_saidos_mes' },
     ];
 
     const ROWS_T = [
-      { label: 'Revisões de Treinos',    f: 'revisoes_treinos' },
-      { label: 'Novas Avaliações',       f: 'novas_avaliacoes' },
+      { label: 'Revisões de Treinos',    f: 'revisoes_treinos',            agg: 'sum' },
+      { label: 'Novas Avaliações',       f: 'novas_avaliacoes',            agg: 'sum' },
       { label: 'Treinos Vencidos',       f: 'treinos_vencidos' },
       { label: 'Vencendo em 7 dias',     f: 'treinos_vencendo_7dias' },
-      { label: 'Alunos em Experiência',  f: 'alunos_experiencia' },
-      { label: 'Fecharam Experiência',   f: 'alunos_fecharam_experiencia' },
+      { label: 'Alunos em Experiência',  f: 'alunos_experiencia',          agg: 'sum' },
+      { label: 'Fecharam Experiência',   f: 'alunos_fecharam_experiencia', agg: 'sum' },
       { label: 'Conversão Exp. (%)',     f: 'conversao_experiencia', dec: 1 },
-      { label: 'Consultoria Física',     f: 'consultoria_fisica' },
+      { label: 'Consultoria Física',     f: 'consultoria_fisica',          agg: 'sum' },
       { label: 'Total Encarteirados',    f: 'total_encarteirados',   bold: true },
-      ...TRAINERS.map(tr => ({ label: `  ↳ ${tr.nome}`, f: `encarteirados_${tr.key}` })),
+      ...TRAINERS.map(tr => ({ label: `     • ${tr.nome}`, f: `encarteirados_${tr.key}` })),
     ];
+
+    const prevC = agregarMes(prevCSems, ROWS_C);
+    const prevT = agregarMes(prevTSems, ROWS_T);
+    if (prevT) {
+      // Conversão do mês = fecharam (soma) ÷ experiência (soma), não a % da última semana
+      const exp = prevT.alunos_experiencia, fech = prevT.alunos_fecharam_experiencia;
+      prevT.conversao_experiencia = exp > 0 ? (fech / exp) * 100 : 0;
+    }
 
     const doc = new PDFDocument({
       margin: 0,
@@ -189,7 +208,7 @@ router.post('/gerar-pdf', async (req, res) => {
       doc.fillColor(GOLD).fontSize(7.5).font('Helvetica-Bold');
       t(mesPrevNome.toUpperCase(), x + 3, y + 4, { width: COL_PREV - 6, align: 'center' });
       doc.fillColor('#888888').fontSize(6).font('Helvetica');
-      t('MÊS ANTERIOR', x + 3, y + 14, { width: COL_PREV - 6, align: 'center' });
+      t('TOTAL DO MÊS', x + 3, y + 14, { width: COL_PREV - 6, align: 'center' });
 
       x += COL_PREV;
       for (let i = 0; i < numCols; i++) {
@@ -243,7 +262,9 @@ router.post('/gerar-pdf', async (req, res) => {
 
     function renderSection(rows, sems, prev, labelTipo, bgTitulo, tituloTexto) {
       const semLabels = sems.map(r => `S${r.semana}`);
-      while (semLabels.length < numCols) semLabels.push(`S${semLabels.length + 1}`);
+      let proxima = sems.length ? sems[sems.length - 1].semana + 1 : null;
+      while (semLabels.length < numCols)
+        semLabels.push(proxima ? `S${proxima++}` : `S${semLabels.length + 1}`);
 
       const rowH  = calcRowH(rows.length);
       const HEAD_H = Math.max(24, rowH + 4);
